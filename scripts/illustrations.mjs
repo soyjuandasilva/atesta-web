@@ -71,6 +71,18 @@ ${arrow}
 <rect x="44" y="344" width="56" height="8" rx="4" fill="var(--surface-2)"/><rect x="128" y="339" width="50" height="18" rx="4" fill="#050706"/>${segAt(n3(v2), 133, 343, 10)}
 </svg>`,
 
+    /** Mapa del posto: su pin con el logotipo y el precio del combustible principal. */
+    spot: (logo, fid, v, place) => `<svg class="ill ill-wide ill-spot" viewBox="0 0 360 250" role="img" aria-label="Localização do posto em ${place}">
+<rect x="4" y="4" width="352" height="242" rx="22" fill="var(--surface-2)"/>
+<path d="M4 190 C 70 172 130 214 214 194 S 330 160 356 170 V226 A20 20 0 0 1 336 246 H24 A20 20 0 0 1 4 226 Z" fill="var(--brand-soft)"/>
+<rect x="232" y="22" width="96" height="56" rx="12" fill="var(--brand-soft)"/>
+<g stroke="var(--surface)" stroke-linecap="round" fill="none"><path d="M10 150 L350 96" stroke-width="13"/><path d="M118 6 L162 244" stroke-width="10"/><path d="M36 30 L340 22" stroke-width="5"/><path d="M262 92 L292 240" stroke-width="6"/><path d="M14 92 L120 120" stroke-width="5"/></g>
+<ellipse cx="180" cy="168" rx="22" ry="7" fill="#000" fill-opacity=".14"/>
+<g><rect x="112" y="58" width="136" height="98" rx="14" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/><path d="M168 155 L180 170 L192 155 Z" fill="var(--surface)" stroke="var(--line)" stroke-width="2" stroke-linejoin="round"/><path d="M168.5 154 H191.5" stroke="var(--surface)" stroke-width="3"/>
+${logo ? `<rect x="124" y="68" width="112" height="38" rx="8" fill="#fff"/><image href="${logo}" x="130" y="71" width="100" height="32" preserveAspectRatio="xMidYMid meet"/>` : `<text x="180" y="94" text-anchor="middle" fill="var(--ink)" ${DISPLAY} font-weight="800" font-size="18">POSTO</text>`}
+<rect x="124" y="114" width="112" height="32" rx="7" fill="#050706"/><rect x="124" y="114" width="6" height="32" rx="2" fill="${FUEL[fid].color}"/>${segAt(n3(v), 140, 121, 18)}</g>
+</svg>`,
+
     /** Escudo con candado: para las páginas legales. */
     shield: () => `<svg class="ill" viewBox="0 0 220 240" role="img" aria-label="Escudo com cadeado">
 <ellipse cx="110" cy="228" rx="70" ry="8" fill="var(--line)"/>

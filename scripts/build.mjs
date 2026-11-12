@@ -486,7 +486,7 @@ for (const s of stations) {
     path: s.url, nav: '/postos/',
     title: `${s.n}: preços de hoje | Atesta`,
     description: `Posto ${s.b === 'Genérico' ? '' : s.B + ' '}em ${s.l || s.m} (${s.m}). Hoje: ${priceList}. Morada, como chegar e postos mais baratos perto.`,
-    h1Section: `<section class="hero"><div class="wrap">${c.html}${s.g ? brandLogo(s.g, s.B) : ''}<h1>${esc(s.n)}</h1><p class="sub">Posto ${s.b === 'Genérico' ? 'sem marca' : esc(s.B)} em ${esc(s.l || s.m)}, concelho de ${esc(m.name)}. Preços comunicados à DGEG.</p>
+    h1Section: `<section class="hero"><div class="wrap">${c.html}${heroTop(`${s.g ? brandLogo(s.g, s.B) : ''}<h1>${esc(s.n)}</h1><p class="sub">Posto ${s.b === 'Genérico' ? 'sem marca' : esc(s.B)} em ${esc(s.l || s.m)}, concelho de ${esc(m.name)}. Preços comunicados à DGEG.</p>`, ILL.spot(s.g ? `/assets/logos/${s.g}.webp` : null, main, s.p[main], s.l || s.m))}
 <div class="hero-grid"><div class="card prices" aria-label="Preços de hoje">${rows}</div>
 <div class="card facts"><dl><div><dt>Morada</dt><dd>${esc(addr)}</dd></div><div><dt>Marca</dt><dd>${brandUrl.has(s.B) ? `<a href="${brandUrl.get(s.B)}">${esc(s.B)}</a>` : esc(s.B)}</dd></div><div><dt>Concelho</dt><dd><a href="${m.url}">${esc(m.name)}</a>, <a href="${d.url}">${esc(d.name)}</a></dd></div></dl>
 <a class="btn btn-brand" href="https://www.google.com/maps/dir/?api=1&amp;destination=${s.lat},${s.lon}" rel="noopener" target="_blank">Como chegar</a></div></div></div></section>`,

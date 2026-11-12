@@ -225,6 +225,7 @@ td small { display: block; color: var(--ink-2); font-size: 14px }
 .hero-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: end }
 .hero-text { min-width: 0 }
 .illus { width: clamp(180px, 22vw, 240px) } .illus:has(.ill-wide) { width: clamp(260px, 32vw, 360px) }
+.illus:has(.ill-spot) { width: clamp(280px, 36vw, 500px); align-self: center }
 .ill { display: block; width: 100%; height: auto }
 .ill .on { color: #F4F7F5 } .ill .off { color: #F4F7F5; opacity: .075 }
 @media (max-width: 760px) { .hero-top { grid-template-columns: minmax(0, 1fr) } .illus { display: none } }
