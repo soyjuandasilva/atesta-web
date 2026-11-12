@@ -8,6 +8,7 @@ import { FUELS, FUEL, slug, mean, todayLisbon, mondayVerdict } from './lib.mjs';
 import { makeIllustrations } from './illustrations.mjs';
 import { LEGAL } from './legal.mjs';
 import { makeSummaries } from './summaries.mjs';
+import { makeGuides } from './guides.mjs';
 
 const SITE = (process.env.SITE_URL || 'https://atesta.pages.dev').replace(/\/$/, '');
 const INDEX = process.env.SITE_INDEX === '1';
@@ -305,6 +306,8 @@ async function out(path, html) {
 
 const SUM = makeSummaries({ stations, districts, brands, brandUrl, FUEL, FUELS, NAT, priced, avg, history, days, todayD, ymd, n1, n2, n3, int, esc, updatedText });
 
+const GUIDE = makeGuides({ stations, districts, brands, brandUrl, NAT, COUNT, priced, avg, mean, n1, n2, n3, int, verdicts, nextMonday, dayMonth });
+
 // ================= Páginas =================
 await rm(OUT, { recursive: true, force: true });
 await mkdir(OUT + '/assets/fonts', { recursive: true });
@@ -339,8 +342,9 @@ const updLine = `Preços comunicados pelos postos à DGEG. Últimos dados: ${upd
     body: picker({ fuels: FUELS.map((x) => x.id), defaultFuel: 2101, title: 'Postos mais baratos perto de ti', intro: 'Mostramos os postos da tua zona. Escolhe o combustível, ordena por preço ou por distância, ou escolhe outro distrito.', id: 'baratos', autoLocate: true }) +
       `<section class="block" aria-labelledby="ps-t"><div class="wrap"><div class="head"><div><h2 id="ps-t">Preços na próxima semana</h2><p>Os preços mudam à segunda-feira. Esta é a previsão para ${dayMonth(nextMonday)}, a partir das notícias desta semana.</p></div><a class="btn btn-line" href="/proxima-semana/">Ver a previsão</a></div><div class="board" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:0">${next}</div></div></section>` +
       `<section class="block" aria-labelledby="dist-t"><div class="wrap"><div class="head"><div><h2 id="dist-t">Postos de combustível por distrito</h2><p>Todos os postos de cada distrito e concelho, com os preços de hoje.</p></div></div><div class="places">${places}</div></div></section>` +
+      GUIDE.home() +
       appBand(),
-    ld: [{ '@context': 'https://schema.org', '@type': 'WebSite', name: 'Atesta', url: SITE + '/', inLanguage: 'pt-PT' }],
+    ld: [GUIDE.homeFaqLd, { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Atesta', url: SITE + '/', inLanguage: 'pt-PT' }],
   });
   await out('/', html);
 }
@@ -437,7 +441,7 @@ ${nextCard(P.fam)}</div></div></section>`,
 <div class="tbl"><table><thead><tr><th>Distrito</th><th class="num">Média</th><th class="num">Face à média</th></tr></thead><tbody>${dRows.map(([d, v]) => `<tr><td><a href="${d.url}">${esc(d.name)}</a></td>${diffCell(v, NAT[fid])}</tr>`).join('')}</tbody></table></div>
 <div class="tbl"><table><thead><tr><th>Marca</th><th class="num">Média</th><th class="num">Face à média</th></tr></thead><tbody>${bRows.map(([b, v, n]) => `<tr><td>${brandUrl.has(b.name) ? `<a href="${b.url}">${esc(b.name)}</a>` : esc(b.name)}<small>${int(n)} postos</small></td>${diffCell(v, NAT[fid])}</tr>`).join('')}</tbody></table></div></div></div></section>` +
       types +
-      (P.fam === 'gasoleo' ? gasoleoGuide() : '') +
+      (P.fam === 'gasoleo' ? gasoleoGuide() : P.fam === 'gasolina' ? GUIDE.gasolina() : GUIDE.gpl()) +
       `<section class="block" aria-labelledby="faq-t"><div class="wrap"><div class="head"><div><h2 id="faq-t">Perguntas sobre o preço ${FAM[P.fam].of}</h2></div></div><div class="card faq">${P.faq.map(([q, a], i) => `<details${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><p class="ans">${esc(a)}</p></details>`).join('')}</div></div></section>` +
       appBand(`Alertas ${FAM[P.fam].of} no teu telemóvel`),
     ld: [c.ld, faqLd],
@@ -515,7 +519,7 @@ ${mondayBlock()}
     title: 'Postos de combustível em Portugal por distrito | Atesta',
     description: `Os ${totalStations} postos de combustível de Portugal continental, por distrito e concelho, com os preços de hoje do gasóleo, gasolina e GPL.`,
     h1Section: `<section class="hero"><div class="wrap">${c.html}${heroTop(`<h1>Postos de combustível em Portugal</h1><p class="sub">${totalStations} postos em ${districts.length} distritos, com o preço de hoje. ${updLine}</p>`, mapArt(stations))}</div></section>`,
-    body: `<section class="block" aria-labelledby="pd-t"><div class="wrap"><div class="head"><div><h2 id="pd-t">Postos por distrito</h2><p>Média de hoje do gasóleo simples e da gasolina 95 em cada distrito.</p></div></div><div class="tbl"><table><thead><tr><th>Distrito</th><th class="num">Postos</th><th class="num">Gasóleo</th><th class="num">Gasolina 95</th></tr></thead><tbody>${rows}</tbody></table></div></div></section>` + appBand(),
+    body: `<section class="block" aria-labelledby="pd-t"><div class="wrap"><div class="head"><div><h2 id="pd-t">Postos por distrito</h2><p>Média de hoje do gasóleo simples e da gasolina 95 em cada distrito.</p></div></div><div class="tbl"><table><thead><tr><th>Distrito</th><th class="num">Postos</th><th class="num">Gasóleo</th><th class="num">Gasolina 95</th></tr></thead><tbody>${rows}</tbody></table></div></div></section>` + GUIDE.postos() + appBand(),
     ld: [c.ld],
   }));
 
@@ -594,7 +598,7 @@ for (const s of stations) {
     title: 'Preço dos combustíveis por marca: Galp, BP, Repsol, Prio | Atesta',
     description: 'Compara o preço médio de hoje do gasóleo e da gasolina em cada marca: Galp, Repsol, BP, Prio, Intermarché, Cepsa e outras.',
     h1Section: `<section class="hero"><div class="wrap">${c.html}<h1>Preço dos combustíveis por marca</h1><p class="sub">Média de hoje em cada marca com pelo menos 5 postos. ${updLine}</p></div></section>`,
-    body: `<section class="block" aria-labelledby="mb-t"><div class="wrap"><div class="head"><div><h2 id="mb-t">Marcas de postos em Portugal</h2></div></div><div class="tbl"><table><thead><tr><th>Marca</th><th class="num">Postos</th><th class="num">Gasóleo</th><th class="num">Gasolina 95</th></tr></thead><tbody>${rows}</tbody></table></div></div></section>` + appBand(),
+    body: `<section class="block" aria-labelledby="mb-t"><div class="wrap"><div class="head"><div><h2 id="mb-t">Marcas de postos em Portugal</h2></div></div><div class="tbl"><table><thead><tr><th>Marca</th><th class="num">Postos</th><th class="num">Gasóleo</th><th class="num">Gasolina 95</th></tr></thead><tbody>${rows}</tbody></table></div></div></section>` + GUIDE.marcas() + appBand(),
     ld: [c.ld],
   }));
   for (const b of brandPages) {
