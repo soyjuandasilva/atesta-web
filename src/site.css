@@ -135,6 +135,10 @@ a.cell:hover { background: var(--bg) }
 .row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; gap: 14px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); text-decoration: none; transition: background .15s ease-out }
 .row:first-child { border-top: 0 } a.row:hover { background: var(--bg) }
 .tile { width: 44px; height: 44px; border-radius: 10px; background: var(--surface-2); display: grid; place-items: center; font: 800 12px/1 var(--f-display); letter-spacing: .03em; color: var(--ink-2); text-align: center; overflow: hidden }
+.tile.logo { background: #FFFFFF; box-shadow: inset 0 0 0 1px var(--line); padding: 4px }
+.tile img { width: 100%; height: 100%; object-fit: contain; display: block }
+.brand-logo { width: 72px; height: 72px; border-radius: 16px; background: #FFFFFF; box-shadow: inset 0 0 0 1px var(--line); padding: 8px; display: grid; place-items: center; margin-top: 18px }
+.brand-logo img { width: 100%; height: 100%; object-fit: contain }
 .row .n { font: 700 18px/1.15 var(--f-display); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
 .row .a { font-size: 14px; color: var(--ink-2); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
 .row .km { font-size: 14px; color: var(--ink-2); white-space: nowrap }
@@ -206,6 +210,9 @@ td small { display: block; color: var(--ink-2); font-size: 14px }
 .app .btn { background: #04210F; color: #fff }
 @media (max-width: 720px) { .app { grid-template-columns: minmax(0, 1fr); padding: 28px 22px } .app .btn { width: 100% } }
 
+.soon { display: flex; gap: 16px; align-items: flex-start; padding: 20px 22px; margin-top: 24px; max-width: 620px }
+.soon b { font: 700 22px/1.2 var(--f-display) } .soon p { color: var(--ink-2); margin-top: 4px }
+.soon-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 5px var(--warn-soft); margin-top: 8px; flex: none }
 .prose { max-width: 70ch; display: grid; gap: 14px; color: var(--ink-2) }
 .prose h2 { color: var(--ink); font-size: 26px; font-weight: 800; margin-top: 12px }
 

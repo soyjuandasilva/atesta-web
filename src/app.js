@@ -47,7 +47,10 @@
       var tpl = box.querySelector('template');
       nearList.innerHTML = rows.map(function (r, i) {
         return tpl.innerHTML
-          .replace('{url}', r.s.u).replace('{tile}', esc(r.s.t)).replace('{name}', esc(r.s.n) + (i === 0 ? '<span class="best">Mais barato</span>' : ''))
+          .replace('{url}', r.s.u)
+          .replace('{tile}', r.s.g
+            ? '<span class="tile logo" aria-hidden="true"><img src="/assets/logos/' + r.s.g + '.webp" alt="" width="36" height="36"></span>'
+            : '<span class="tile" aria-hidden="true">' + esc(r.s.t) + '</span>').replace('{name}', esc(r.s.n) + (i === 0 ? '<span class="best">Mais barato</span>' : ''))
           .replace('{addr}', esc(r.s.l)).replace('{km}', r.km.toFixed(1).replace('.', ',') + ' km').replace('{seg}', window.atestaSeg(r.p, fuel));
       }).join('');
       nearList.hidden = false;

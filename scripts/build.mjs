@@ -37,9 +37,23 @@ function brandName(b) {
 }
 const tileText = (b) => (b === 'Sem marca' ? 'POSTO' : b.replace(/[^A-Za-zÀ-ÿ0-9]/g, '').slice(0, 4).toUpperCase());
 
+// Logotipos de las marcas: los mismos que la app (res/drawable-nodpi/brand_*.webp). Cepsa es ahora Moeve.
+const LOGO_RULES = [[['galp', 'petrogal'], 'galp'], [['repsol', 'campsa', 'petronor'], 'repsol'], [['bp'], 'bp'], [['prio'], 'prio'],
+  [['moeve', 'cepsa'], 'moeve'], [['shell'], 'shell'], [['totalenergies', 'total'], 'totalenergies'], [['intermarche', 'ecomarche'], 'intermarche'],
+  [['leclerc'], 'leclerc'], [['auchan', 'jumbo'], 'auchan'], [['alves bandeira'], 'alvesbandeira'], [['q8'], 'q8'], [['esso'], 'esso'],
+  [['avia'], 'avia'], [['petroprix'], 'petroprix']];
+function logoKey(brand) {
+  const b = slug(brand).replace(/-/g, ' ');
+  for (const [keys, logo] of LOGO_RULES) if (keys.some((k) => new RegExp(`(^| )${k}( |$)`).test(b))) return logo;
+  return null;
+}
+/** Contenido del cuadrado de marca: el logotipo si lo hay; si no, las iniciales. */
+const tile = (s) => (s.g ? `<span class="tile logo" aria-hidden="true"><img src="/assets/logos/${s.g}.webp" alt="" width="36" height="36" loading="lazy" decoding="async"></span>` : `<span class="tile" aria-hidden="true">${esc(tileText(s.B))}</span>`);
+
 // ---------- Datos derivados ----------
 for (const s of stations) {
   s.B = brandName(s.b);
+  s.g = logoKey(s.b);
   s.ds = slug(s.d);
   s.ms = slug(s.m);
   s.url = `/posto/${slug(s.n)}-${s.id}/`;
@@ -126,7 +140,7 @@ function crumbs(items) {
 }
 
 function stationRow(s, fid, { best = false, sub } = {}) {
-  return `<a class="row" href="${s.url}"><span class="tile" aria-hidden="true">${esc(tileText(s.B))}</span><span style="min-width:0"><span class="n">${esc(s.n)}${best ? '<span class="best">Mais barato</span>' : ''}</span><span class="a">${esc(sub ?? `${s.B} · ${s.l || s.m}`)}</span></span><span class="km">${esc(s.m)}</span>${seg(s.p[fid], fid)}</a>`;
+  return `<a class="row" href="${s.url}">${tile(s)}<span style="min-width:0"><span class="n">${esc(s.n)}${best ? '<span class="best">Mais barato</span>' : ''}</span><span class="a">${esc(sub ?? `${s.B} · ${s.l || s.m}`)}</span></span><span class="km">${esc(s.m)}</span>${seg(s.p[fid], fid)}</a>`;
 }
 
 function diffCell(v, ref) {
@@ -135,7 +149,7 @@ function diffCell(v, ref) {
   return `<td class="num">${n3(v)} €</td><td class="num"><span class="diff ${Math.abs(d) < 0.0005 ? 'eq' : d < 0 ? 'lo' : 'hi'}">${cents(d)}<span class="bar" style="width:${w.toFixed(0)}px"></span></span></td>`;
 }
 
-const appBand = (title = 'Alertas de preço no teu telemóvel') => `<section class="block" aria-labelledby="app-t"><div class="wrap"><div class="app"><div><h2 id="app-t">${title}</h2><p>Diz o preço que queres pagar e o Atesta avisa-te quando um posto da tua zona chegar lá. Também tens o mapa de todos os postos, os teus favoritos e a previsão de segunda-feira. Grátis, para Android.</p></div><a class="btn" href="/app/">Ver a app Atesta</a></div></div></section>`;
+const appBand = (title = 'Alertas de preço no teu telemóvel') => `<section class="block" aria-labelledby="app-t"><div class="wrap"><div class="app"><div><h2 id="app-t">${title}</h2><p>Diz o preço que queres pagar e o Atesta avisa-te quando um posto da tua zona chegar lá. Também tens o mapa de todos os postos, os teus favoritos e a previsão de segunda-feira. Grátis, para Android, brevemente no Google Play.</p></div><a class="btn" href="/app/">Ver a app Atesta</a></div></div></section>`;
 
 const VERDICT = {
   up: { say: 'Deve subir', tip: 'Se puderes, atesta antes de segunda-feira.' },
@@ -211,7 +225,7 @@ function picker({ fuels, defaultFuel, defaultDistrict = '', title, intro, id }) 
 <label for="${id}-d">Distrito<select id="${id}-d">${opts.map(([v, t, u, m]) => `<option value="${v}" data-url="${u}" data-more="${esc(m)}"${v === defaultDistrict ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
 <button class="btn btn-line" type="button" data-near>Perto de mim</button></div></div>
 ${lists.join('\n')}<div class="list" data-near-list hidden></div>
-<template><a class="row" href="{url}"><span class="tile" aria-hidden="true">{tile}</span><span style="min-width:0"><span class="n">{name}</span><span class="a">{addr}</span></span><span class="km">{km}</span>{seg}</a></template>
+<template><a class="row" href="{url}">{tile}<span style="min-width:0"><span class="n">{name}</span><span class="a">{addr}</span></span><span class="km">{km}</span>{seg}</a></template>
 <p class="status" role="status"></p><p><a data-more href="${def[2]}">${esc(def[3])}</a></p></div></section>`;
 }
 
@@ -242,7 +256,7 @@ ${lds}
 <body>
 ${SPRITE}
 <a class="skip" href="#conteudo">Saltar para o conteúdo</a>
-<header class="top"><div class="wrap"><a class="brand" href="/" aria-label="Atesta, página inicial"><span class="mark">${LOGO}</span>Atesta</a><nav class="main" aria-label="Secções">${navHtml}</nav><a class="btn btn-brand" href="/app/">Descarregar a app</a></div></header>
+<header class="top"><div class="wrap"><a class="brand" href="/" aria-label="Atesta, página inicial"><span class="mark">${LOGO}</span>Atesta</a><nav class="main" aria-label="Secções">${navHtml}</nav><a class="btn btn-brand" href="/app/">App Atesta</a></div></header>
 <nav class="subnav" aria-label="Secções"><div class="wrap">${navHtml}</div></nav>
 <main id="conteudo">
 ${h1Section}
@@ -277,6 +291,7 @@ JS_V = createHash('md5').update(js).digest('hex').slice(0, 8);
 await writeFile(OUT + '/assets/site.css', css);
 await writeFile(OUT + '/assets/app.js', js);
 await cp('src/fonts', OUT + '/assets/fonts', { recursive: true });
+await cp('src/logos', OUT + '/assets/logos', { recursive: true });
 
 const totalStations = int(stations.length);
 const updLine = `Preços comunicados pelos postos à DGEG. Últimos dados: ${updatedText(lastUpdate)}.`;
@@ -452,7 +467,7 @@ for (const s of stations) {
     description: `Posto ${s.b === 'Genérico' ? '' : s.B + ' '}em ${s.l || s.m} (${s.m}). Hoje: ${priceList}. Morada, como chegar e postos mais baratos perto.`,
     h1Section: `<section class="hero"><div class="wrap">${c.html}<h1>${esc(s.n)}</h1><p class="sub">Posto ${s.b === 'Genérico' ? 'sem marca' : esc(s.B)} em ${esc(s.l || s.m)}, concelho de ${esc(m.name)}. Preços comunicados à DGEG.</p>
 <div class="hero-grid"><div class="card prices" aria-label="Preços de hoje">${rows}</div>
-<div class="card facts"><dl><div><dt>Morada</dt><dd>${esc(addr)}</dd></div><div><dt>Marca</dt><dd>${brandUrl.has(s.B) ? `<a href="${brandUrl.get(s.B)}">${esc(s.B)}</a>` : esc(s.B)}</dd></div><div><dt>Concelho</dt><dd><a href="${m.url}">${esc(m.name)}</a>, <a href="${d.url}">${esc(d.name)}</a></dd></div></dl>
+<div class="card facts"><dl><div><dt>Morada</dt><dd>${esc(addr)}</dd></div><div><dt>Marca</dt><dd style="display:flex;align-items:center;gap:10px">${s.g ? tile(s) : ''}${brandUrl.has(s.B) ? `<a href="${brandUrl.get(s.B)}">${esc(s.B)}</a>` : esc(s.B)}</dd></div><div><dt>Concelho</dt><dd><a href="${m.url}">${esc(m.name)}</a>, <a href="${d.url}">${esc(d.name)}</a></dd></div></dl>
 <a class="btn btn-brand" href="https://www.google.com/maps/dir/?api=1&amp;destination=${s.lat},${s.lon}" rel="noopener" target="_blank">Como chegar</a></div></div></div></section>`,
     body: (others.length ? `<section class="block" aria-labelledby="ot-t"><div class="wrap"><div class="head"><div><h2 id="ot-t">Outros postos em ${esc(m.name)}</h2><p>Os mais baratos do concelho para ${FUEL[main].short === 'GPL' ? 'o GPL' : FUEL[main].fam === 'gasoleo' ? 'o gasóleo' : 'a gasolina 95'} hoje.</p></div><a class="btn btn-line" href="${m.url}">Ver todos em ${esc(m.name)}</a></div><div class="list">${others.map((x, i) => stationRow(x, main, { best: i === 0 && x.p[main] < s.p[main] })).join('')}</div></div></section>` : '') + appBand(),
     ld: [c.ld, ld], type: 'place',
@@ -479,7 +494,7 @@ for (const s of stations) {
       path: b.url, nav: '/postos/',
       title: `Preço do gasóleo e da gasolina nos postos ${b.name} hoje | Atesta`,
       description: `Preço médio de hoje nos ${b.list.length} postos ${b.name}: ${fids.map((fid) => `${FUEL[fid].short.toLowerCase()} a ${n3(avg(b.list, fid))} €`).join(', ')}. Os postos ${b.name} mais baratos por distrito.`,
-      h1Section: `<section class="hero"><div class="wrap">${cb.html}<h1>Preço do gasóleo e da gasolina nos postos ${esc(b.name)}</h1><p class="sub">Média de hoje nos ${int(b.list.length)} postos ${esc(b.name)} de Portugal continental. ${updLine}</p>
+      h1Section: `<section class="hero"><div class="wrap">${cb.html}${b.list[0].g ? `<div class="brand-logo"><img src="/assets/logos/${b.list[0].g}.webp" alt="Logotipo ${esc(b.name)}" width="56" height="56"></div>` : ''}<h1>Preço do gasóleo e da gasolina nos postos ${esc(b.name)}</h1><p class="sub">Média de hoje nos ${int(b.list.length)} postos ${esc(b.name)} de Portugal continental. ${updLine}</p>
 <div class="board">${fids.map((fid) => { const v = avg(b.list, fid); return `<div class="cell"><span class="fuel">${FUEL[fid].short}</span>${seg(v, fid, 'l', true)}<span class="note">${cents(v - NAT[fid])} face à média nacional</span></div>`; }).join('')}</div></div></section>`,
       body: `<section class="block" aria-labelledby="bc-t"><div class="wrap"><div class="head"><div><h2 id="bc-t">Postos ${esc(b.name)} mais baratos</h2><p>Os 8 com o gasóleo e a gasolina 95 mais baratos hoje.</p></div></div><div class="grid2"><div><h3 style="font-size:22px;margin-bottom:12px">Gasóleo</h3><div class="list">${priced(b.list, 2101).slice(0, 8).map((s, i) => stationRow(s, 2101, { best: i === 0, sub: `${s.l || s.m} · ${s.d}` })).join('')}</div></div><div><h3 style="font-size:22px;margin-bottom:12px">Gasolina 95</h3><div class="list">${priced(b.list, 3201).slice(0, 8).map((s, i) => stationRow(s, 3201, { best: i === 0, sub: `${s.l || s.m} · ${s.d}` })).join('')}</div></div></div></div></section>
 <section class="block" aria-labelledby="bd-t"><div class="wrap"><div class="head"><div><h2 id="bd-t">Postos ${esc(b.name)} por distrito</h2></div></div><div class="tbl"><table><thead><tr><th>Distrito</th><th class="num">Postos</th><th class="num">Gasóleo</th><th class="num">Gasolina 95</th></tr></thead><tbody>${dRows.map(([d, l]) => `<tr><td><a href="${d.url}">${esc(d.name)}</a></td><td class="num">${l.length}</td><td class="num">${avg(l, 2101) ? n3(avg(l, 2101)) + ' €' : '—'}</td><td class="num">${avg(l, 3201) ? n3(avg(l, 3201)) + ' €' : '—'}</td></tr>`).join('')}</tbody></table></div></div></section>` + appBand(),
@@ -499,7 +514,7 @@ for (const s of stations) {
     path: '/app/', nav: '',
     title: 'Atesta: app de preços dos combustíveis para Android',
     description: 'A app Atesta mostra os postos mais baratos perto de ti, avisa-te quando o preço baixa e diz-te se compensa esperar por segunda-feira. Grátis para Android.',
-    h1Section: `<section class="hero"><div class="wrap">${c.html}<h1>Atesta, a app dos preços dos combustíveis</h1><p class="sub">Os postos mais baratos perto de ti, alertas de preço e a previsão de segunda-feira. Grátis, para Android, com os preços oficiais da DGEG.</p><p style="margin-top:22px"><span class="chg flat">Brevemente no Google Play</span></p></div></section>`,
+    h1Section: `<section class="hero"><div class="wrap">${c.html}<h1>Atesta, a app dos preços dos combustíveis</h1><p class="sub">Os postos mais baratos perto de ti, alertas de preço e a previsão de segunda-feira. Grátis, para Android, com os preços oficiais da DGEG.</p><div class="card soon"><span class="soon-dot" aria-hidden="true"></span><div><b>Brevemente no Google Play</b><p>A app está quase pronta. Quando estiver publicada, o botão para a instalar aparece aqui e em todas as páginas do Atesta.</p></div></div></div></section>`,
     body: `<section class="block" aria-labelledby="af-t"><div class="wrap"><div class="head"><div><h2 id="af-t">O que faz a app Atesta</h2></div></div><div class="types">${feats.map(([t, p]) => `<div class="card type"><h3>${t}</h3><p>${p}</p></div>`).join('')}</div></div></section>`,
     ld: [c.ld, { '@context': 'https://schema.org', '@type': 'MobileApplication', name: 'Atesta', operatingSystem: 'Android', applicationCategory: 'TravelApplication', offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' } }],
   }));
@@ -513,7 +528,7 @@ for (const s of stations) {
   await writeFile(OUT + '/404.html', html.replace('<link rel="canonical"', '<meta name="robots" content="noindex"><link rel="canonical"'));
 }
 await mkdir(OUT + '/dados', { recursive: true });
-await writeFile(OUT + '/dados/postos.json', JSON.stringify(stations.map((s) => ({ n: s.n, t: tileText(s.B), l: `${s.B} · ${s.l || s.m}`, u: s.url, lat: s.lat, lon: s.lon,
+await writeFile(OUT + '/dados/postos.json', JSON.stringify(stations.map((s) => ({ n: s.n, t: tileText(s.B), g: s.g || undefined, l: `${s.B} · ${s.l || s.m}`, u: s.url, lat: s.lat, lon: s.lon,
   p: Object.fromEntries([2101, 3201, 1120].filter((f) => s.p[f]).map((f) => [f, s.p[f]])) }))));
 await writeFile(OUT + '/sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${pages.map((p) => `<url><loc>${SITE}${p}</loc><lastmod>${today}</lastmod></url>`).join('\n')}\n</urlset>\n`);
 await writeFile(OUT + '/robots.txt', INDEX ? `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n` : 'User-agent: *\nDisallow: /\n');
