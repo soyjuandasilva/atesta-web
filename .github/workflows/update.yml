@@ -1,0 +1,45 @@
+name: Atualizar preços
+
+# Cada 2 horas lee la DGEG y las noticias. Si algo cambió, lo guarda en data/ y hace
+# push: Cloudflare Pages ve el push y vuelve a generar la web (máximo ~372 al mes,
+# dentro de las 500 compilaciones del plan gratuito).
+on:
+  schedule:
+    - cron: '17 */2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: atualizar-precos
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Descarregar preços e notícias
+        run: node scripts/fetch.mjs
+
+      - name: Comprovar que a web se gera
+        run: node scripts/build.mjs
+
+      - name: Guardar se mudou
+        run: |
+          if git diff --quiet -- data/; then
+            echo "Sem alterações"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git commit -m "Preços de $(TZ=Europe/Lisbon date +'%Y-%m-%d %H:%M')"
+          git push
