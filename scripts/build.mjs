@@ -5,6 +5,8 @@
 import { readFile, writeFile, mkdir, rm, cp } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { FUELS, FUEL, slug, mean, todayLisbon, mondayVerdict } from './lib.mjs';
+import { makeIllustrations } from './illustrations.mjs';
+import { LEGAL } from './legal.mjs';
 
 const SITE = (process.env.SITE_URL || 'https://atesta.pages.dev').replace(/\/$/, '');
 const INDEX = process.env.SITE_INDEX === '1';
@@ -47,6 +49,9 @@ function logoKey(brand) {
   for (const [keys, logo] of LOGO_RULES) if (keys.some((k) => new RegExp(`(^| )${k}( |$)`).test(b))) return logo;
   return null;
 }
+/** Logotipo grande de la marca, con su forma real (el de Intermarché es alargado). */
+const WIDE_LOGOS = { intermarche: [192, 36] };
+const brandLogo = (g, name) => { const [w, h] = WIDE_LOGOS[g] || [192, 192]; return `<div class="brand-logo${WIDE_LOGOS[g] ? ' wide' : ''}"><img src="/assets/logos/${g}.webp" alt="Logotipo ${esc(name)}" width="${w}" height="${h}"></div>`; };
 /** Contenido del cuadrado de marca: el logotipo si lo hay; si no, las iniciales. */
 const tile = (s) => (s.g ? `<span class="tile logo" aria-hidden="true"><img src="/assets/logos/${s.g}.webp" alt="" width="36" height="36" loading="lazy" decoding="async"></span>` : `<span class="tile" aria-hidden="true">${esc(tileText(s.B))}</span>`);
 
@@ -107,7 +112,7 @@ const SPRITE = '<svg width="0" height="0" style="position:absolute" aria-hidden=
   DIG.map((bits, d) => `<g id="d${d}" fill="currentColor">${SHAPES.filter((_, i) => bits & (1 << i)).map(poly).join('')}</g>`).join('') +
   `<g id="dg" fill="currentColor">${SHAPES.map(poly).join('')}</g><g id="dp" fill="currentColor">${poly([[0, S.H - S.T], [S.T, S.H - S.T], [S.T, S.H], [0, S.H]])}</g></defs></svg>`;
 
-function segSvg(text) {
+function segParts(text) {
   let x = 0, prev = '', out = '';
   for (const ch of text) {
     if (ch >= '0' && ch <= '9') {
@@ -117,8 +122,21 @@ function segSvg(text) {
       x += S.W; prev = 'd';
     } else if (ch === ',') { x += 0.8; out += `<use href="#dp" class="on" x="${+x.toFixed(2)}"/>`; x += S.T + 0.8; prev = 'p'; }
   }
-  return `<svg viewBox="0 0 ${+(x + S.H * S.SK).toFixed(2)} ${S.H}" aria-hidden="true">${out}</svg>`;
+  return { w: +(x + S.H * S.SK).toFixed(2), uses: out };
 }
+function segSvg(text) {
+  const p = segParts(text);
+  return `<svg viewBox="0 0 ${p.w} ${S.H}" aria-hidden="true">${p.uses}</svg>`;
+}
+/** Cifras de 7 segmentos dentro de una ilustración: esquina en (x, y), altura h. */
+function segAt(text, x, y, h) {
+  const p = segParts(text);
+  return `<svg x="${x}" y="${y}" height="${h}" width="${+(h * p.w / S.H).toFixed(1)}" viewBox="0 0 ${p.w} ${S.H}">${p.uses}</svg>`;
+}
+const ILL = makeIllustrations({ segAt, n3, FUEL });
+/** Mapa con los 4 postos de gasóleo más baratos de la lista (el primero, marcado). */
+const mapArt = (list) => { const p = priced(list, 2101).slice(0, 4); const pos = [[96, 100], [262, 74], [118, 196], [296, 150]]; return ILL.map(p.map((s, i) => [...pos[i], s.p[2101], i === 0])); };
+const heroTop = (inner, art) => `<div class="hero-top"><div class="hero-text">${inner}</div><div class="illus">${art}</div></div>`;
 /** Precio en el panel del totem. */
 function seg(price, fid, size = '', unit = false) {
   const t = n3(price);
@@ -208,25 +226,28 @@ function historyBlock(fid, title, districtName) {
 }
 
 // ---------- Selector de postos más baratos ----------
-function picker({ fuels, defaultFuel, defaultDistrict = '', title, intro, id }) {
+// En el HTML van ya las listas del combustible por defecto (para Google y sin JavaScript).
+// Los demás combustibles y «perto de ti» los dibuja app.js con /dados/postos.json.
+function picker({ fuels, defaultFuel, title, intro, id, autoLocate = false }) {
   const opts = [['', 'Portugal (todos)', '/postos/', 'Ver todos os distritos'], ...districts.map((d) => [d.slug, d.name, d.url, `Ver todos os postos de ${d.name}`])];
-  const lists = [];
-  for (const f of fuels) {
-    lists.push(`<div class="list" data-d="" data-f="${f}"${defaultDistrict === '' && f === defaultFuel ? '' : ' hidden'}>${priced(stations, f).slice(0, 8).map((s, i) => stationRow(s, f, { best: i === 0 })).join('')}</div>`);
-    for (const d of districts) {
-      const p = priced(d.list, f).slice(0, 5);
-      if (p.length) lists.push(`<div class="list" data-d="${d.slug}" data-f="${f}"${d.slug === defaultDistrict && f === defaultFuel ? '' : ' hidden'}>${p.map((s, i) => stationRow(s, f, { best: i === 0 })).join('')}</div>`);
-    }
+  const f = defaultFuel;
+  const lists = [`<div class="list" data-d="" data-f="${f}">${priced(stations, f).slice(0, 8).map((s, i) => stationRow(s, f, { best: i === 0 })).join('')}</div>`];
+  for (const d of districts) {
+    const p = priced(d.list, f).slice(0, 8);
+    if (p.length) lists.push(`<div class="list" data-d="${d.slug}" data-f="${f}" hidden>${p.map((s, i) => stationRow(s, f, { best: i === 0 })).join('')}</div>`);
   }
-  const def = opts.find((o) => o[0] === defaultDistrict);
-  return `<section class="block" aria-labelledby="${id}"><div class="wrap" data-picker data-fuel="${defaultFuel}">
-<div class="head"><div><h2 id="${id}">${title}</h2><p>${intro}</p></div>
-<div class="controls">${fuels.length > 1 ? `<div class="chips" role="group" aria-label="Combustível">${fuels.map((f) => `<button type="button" data-f="${f}" aria-pressed="${f === defaultFuel}">${FUEL[f].short}</button>`).join('')}</div>` : ''}
-<label for="${id}-d">Distrito<select id="${id}-d">${opts.map(([v, t, u, m]) => `<option value="${v}" data-url="${u}" data-more="${esc(m)}"${v === defaultDistrict ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
-<button class="btn btn-line" type="button" data-near>Perto de mim</button></div></div>
-${lists.join('\n')}<div class="list" data-near-list hidden></div>
+  return `<section class="block" aria-labelledby="${id}"><div class="wrap" data-picker data-fuel="${f}"${autoLocate ? ' data-auto-locate' : ''}>
+<div class="head"><div><h2 id="${id}">${title}</h2><p>${intro}</p></div></div>
+${fuels.length > 1 ? `<div class="chips fuels" role="group" aria-label="Combustível" data-fuels>${fuels.map((x) => `<button type="button" data-f="${x}" aria-pressed="${x === f}"><i style="background:${FUEL[x].color}"></i>${FUEL[x].short}</button>`).join('')}</div>` : ''}
+<div class="controls">
+<label for="${id}-d">Distrito<select id="${id}-d">${opts.map(([v, t, u, m]) => `<option value="${v}" data-url="${u}" data-more="${esc(m)}">${esc(t)}</option>`).join('')}</select></label>
+<button class="btn btn-line" type="button" data-near><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Perto de mim</button>
+<div class="chips" role="group" aria-label="Ordenar" data-sort hidden><button type="button" data-s="price" aria-pressed="true">Mais baratos</button><button type="button" data-s="dist" aria-pressed="false">Mais perto</button></div>
+</div>
+<p class="status" role="status"></p>
+${lists.join('\n')}<div class="list" data-dyn-list hidden></div>
 <template><a class="row" href="{url}">{tile}<span style="min-width:0"><span class="n">{name}</span><span class="a">{addr}</span></span><span class="km">{km}</span>{seg}</a></template>
-<p class="status" role="status"></p><p><a data-more href="${def[2]}">${esc(def[3])}</a></p></div></section>`;
+<p style="margin-top:14px"><a data-more href="/postos/">Ver todos os distritos</a></p></div></section>`;
 }
 
 // ---------- Plantilla ----------
@@ -267,7 +288,7 @@ ${body}
 <div><h2>Postos por distrito</h2><ul>${districts.slice(0, 9).map((d) => `<li><a href="${d.url}">${esc(d.name)}</a></li>`).join('')}</ul></div>
 <div><h2>&nbsp;</h2><ul>${districts.slice(9).map((d) => `<li><a href="${d.url}">${esc(d.name)}</a></li>`).join('')}</ul></div>
 <div><h2>Marcas</h2><ul>${brandPages.slice(0, 8).map((b) => `<li><a href="${b.url}">${esc(b.name)}</a></li>`).join('')}<li><a href="/marcas/">Todas as marcas</a></li></ul></div>
-</div><div class="legal"><span>Preços da DGEG (Direção-Geral de Energia e Geologia), comunicados pelos postos. Últimos dados: ${esc(updatedText(lastUpdate))}.</span><span><a href="/app/">App Atesta para Android</a> · © ${todayD.getUTCFullYear()} Atesta</span></div></div></footer>
+</div><div class="legal"><span>Preços da DGEG (Direção-Geral de Energia e Geologia), comunicados pelos postos. Últimos dados: ${esc(updatedText(lastUpdate))}.</span><span><a href="/app/">App Atesta para Android</a> · <a href="/privacidade/">Privacidade</a> · <a href="/cookies/">Cookies</a> · <a href="/termos/">Termos de utilização</a> · © ${todayD.getUTCFullYear()} Atesta</span></div></div></footer>
 <script>${SEG_CLIENT}</script>
 <script src="/assets/app.js?v=${JS_V}" defer></script>
 </body>
@@ -311,8 +332,8 @@ const updLine = `Preços comunicados pelos postos à DGEG. Últimos dados: ${upd
     path: '/', nav: '',
     title: 'Preços dos combustíveis hoje em Portugal | Atesta',
     description: `Preço do gasóleo, gasolina e GPL hoje em ${totalStations} postos de Portugal, com os mais baratos perto de ti e a previsão para a próxima semana. Dados da DGEG.`,
-    h1Section: `<section class="hero"><div class="wrap"><h1>Preços dos combustíveis hoje em Portugal</h1><p class="sub"><span class="dot" aria-hidden="true"></span>Média de hoje em ${totalStations} postos. ${updLine}</p><div class="board">${board}</div></div></section>`,
-    body: picker({ fuels: [2101, 3201, 1120], defaultFuel: 2101, title: 'Postos mais baratos perto de ti', intro: 'Escolhe o combustível e o distrito, ou usa a tua localização para ver os mais baratos a menos de 15 km.', id: 'baratos' }) +
+    h1Section: `<section class="hero"><div class="wrap">${heroTop(`<h1>Preços dos combustíveis hoje em Portugal</h1><p class="sub"><span class="dot" aria-hidden="true"></span>Média de hoje em ${totalStations} postos. ${updLine}</p>`, ILL.totem([[3201, NAT[3201]], [2101, NAT[2101]], [1120, NAT[1120]]]))}<div class="board">${board}</div></div></section>`,
+    body: picker({ fuels: FUELS.map((x) => x.id), defaultFuel: 2101, title: 'Postos mais baratos perto de ti', intro: 'Mostramos os postos da tua zona. Escolhe o combustível, ordena por preço ou por distância, ou escolhe outro distrito.', id: 'baratos', autoLocate: true }) +
       `<section class="block" aria-labelledby="ps-t"><div class="wrap"><div class="head"><div><h2 id="ps-t">Preços na próxima semana</h2><p>Os preços mudam à segunda-feira. Esta é a previsão para ${dayMonth(nextMonday)}, a partir das notícias desta semana.</p></div><a class="btn btn-line" href="/proxima-semana/">Ver a previsão</a></div><div class="board" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:0">${next}</div></div></section>` +
       `<section class="block" aria-labelledby="dist-t"><div class="wrap"><div class="head"><div><h2 id="dist-t">Postos de combustível por distrito</h2><p>Todos os postos de cada distrito e concelho, com os preços de hoje.</p></div></div><div class="places">${places}</div></div></section>` +
       appBand(),
@@ -359,7 +380,7 @@ for (const P of FAMPAGES) {
     path: P.path, nav: P.path,
     title: `${P.h1} | Atesta`,
     description: `${P.h1}: média de ${n3(NAT[fid])} € por litro em ${int(COUNT[fid])} postos, os mais baratos por distrito, a previsão para a próxima semana e a evolução do preço.`,
-    h1Section: `<section class="hero"><div class="wrap">${c.html}<h1>${P.h1}</h1><p class="sub">Média ${f.fam === 'gpl' ? 'do GPL Auto' : (f.fam === 'gasolina' ? 'da ' : 'do ') + f.name.toLowerCase()} em ${int(COUNT[fid])} postos. ${updLine}</p>
+    h1Section: `<section class="hero"><div class="wrap">${c.html}${heroTop(`<h1>${P.h1}</h1><p class="sub">Média ${f.fam === 'gpl' ? 'do GPL Auto' : (f.fam === 'gasolina' ? 'da ' : 'do ') + f.name.toLowerCase()} em ${int(COUNT[fid])} postos. ${updLine}</p>`, ILL.pump(fid, NAT[fid]))}
 <div class="hero-grid"><div class="card today" aria-labelledby="hoje-t"><div class="today-top"><h2 id="hoje-t">${f.name} · média nacional</h2>${chg}</div>${seg(NAT[fid], fid, 'xl', true)}
 <div class="range"><div><span>Mais barato hoje</span><b>${n3(cheap.p[fid])} €</b><a href="${cheap.url}">${esc(cheap.n)}</a></div><div><span>Mais caro hoje</span><b>${n3(dear.p[fid])} €</b><a href="${dear.url}">${esc(dear.n)}</a></div><div><span>Diferença em 50 litros</span><b>${n2((dear.p[fid] - cheap.p[fid]) * 50)} €</b><span>entre o mais caro e o mais barato</span></div></div></div>
 ${nextCard(P.fam)}</div></div></section>`,
@@ -386,7 +407,7 @@ ${nextCard(P.fam)}</div></div></section>`,
     path: '/proxima-semana/', nav: '/proxima-semana/',
     title: 'Preço dos combustíveis na próxima semana | Atesta',
     description: `Os combustíveis sobem ou descem na segunda-feira, ${dayMonth(nextMonday)}? Previsão para o gasóleo, a gasolina e o GPL a partir das notícias desta semana.`,
-    h1Section: `<section class="hero"><div class="wrap">${c.html}<h1>Preço dos combustíveis na próxima semana</h1><p class="sub">Previsão para segunda-feira, ${longDate(nextMonday)}, quando os postos mudam os preços. Atualizada várias vezes por dia com as notícias desta semana.</p>
+    h1Section: `<section class="hero"><div class="wrap">${c.html}${heroTop(`<h1>Preço dos combustíveis na próxima semana</h1><p class="sub">Previsão para segunda-feira, ${longDate(nextMonday)}, quando os postos mudam os preços. Atualizada várias vezes por dia com as notícias desta semana.</p>`, ILL.week(nextMonday, verdicts.gasoleo.kind))}
 <div class="types" style="margin-top:28px">${cards}</div></div></section>`,
     body: `<section class="block" aria-labelledby="nw-t"><div class="wrap"><div class="head"><div><h2 id="nw-t">Notícias desta semana sobre os preços</h2><p>As notícias em que se baseia a previsão, dos últimos 7 dias.</p></div></div>${recent.length ? `<div class="card news">${recent.slice(0, 12).map((n) => `<a href="${esc(n.link)}" rel="nofollow noopener" target="_blank"><b>${esc(n.title)}</b><span>${esc(n.source)} · ${fmtNewsDate(n.t)}</span></a>`).join('')}</div>` : '<div class="card empty">Ainda não há notícias desta semana sobre os preços.</div>'}</div></section>
 <section class="block" aria-labelledby="como-t"><div class="wrap prose"><h2 id="como-t">Como fazemos a previsão</h2><p>Em Portugal os postos mudam os preços à segunda-feira, conforme a variação das cotações internacionais e do câmbio na semana anterior. A partir de quinta-feira, a imprensa já publica se os combustíveis vão subir ou descer e quantos cêntimos.</p><p>O Atesta lê essas notícias várias vezes por dia e conta quantas apontam para uma subida ou para uma descida de cada combustível. Quando não há acordo, dizemos que não há previsão clara. É uma previsão: o preço final depende de cada posto.</p></div></section>` + appBand('A previsão de segunda-feira no teu telemóvel'),
@@ -403,7 +424,7 @@ ${nextCard(P.fam)}</div></div></section>`,
     path: '/postos/', nav: '/postos/',
     title: 'Postos de combustível em Portugal por distrito | Atesta',
     description: `Os ${totalStations} postos de combustível de Portugal continental, por distrito e concelho, com os preços de hoje do gasóleo, gasolina e GPL.`,
-    h1Section: `<section class="hero"><div class="wrap">${c.html}<h1>Postos de combustível em Portugal</h1><p class="sub">${totalStations} postos em ${districts.length} distritos, com o preço de hoje. ${updLine}</p></div></section>`,
+    h1Section: `<section class="hero"><div class="wrap">${c.html}${heroTop(`<h1>Postos de combustível em Portugal</h1><p class="sub">${totalStations} postos em ${districts.length} distritos, com o preço de hoje. ${updLine}</p>`, mapArt(stations))}</div></section>`,
     body: `<section class="block" aria-labelledby="pd-t"><div class="wrap"><div class="head"><div><h2 id="pd-t">Postos por distrito</h2><p>Média de hoje do gasóleo simples e da gasolina 95 em cada distrito.</p></div></div><div class="tbl"><table><thead><tr><th>Distrito</th><th class="num">Postos</th><th class="num">Gasóleo</th><th class="num">Gasolina 95</th></tr></thead><tbody>${rows}</tbody></table></div></div></section>` + appBand(),
     ld: [c.ld],
   }));
@@ -417,7 +438,7 @@ ${nextCard(P.fam)}</div></div></section>`,
       path: d.url, nav: '/postos/',
       title: `Postos de combustível em ${d.name}: preços de hoje | Atesta`,
       description: `${int(d.list.length)} postos de combustível no distrito de ${d.name}. Gasóleo a ${n3(ag)} € e gasolina 95 a ${n3(a95)} € de média hoje, com os mais baratos de cada concelho.`,
-      h1Section: `<section class="hero"><div class="wrap">${cd.html}<h1>Postos de combustível em ${esc(d.name)}</h1><p class="sub">${int(d.list.length)} postos em ${d.councils.length} concelhos. ${updLine}</p>
+      h1Section: `<section class="hero"><div class="wrap">${cd.html}${heroTop(`<h1>Postos de combustível em ${esc(d.name)}</h1><p class="sub">${int(d.list.length)} postos em ${d.councils.length} concelhos. ${updLine}</p>`, mapArt(d.list))}
 <div class="board">${[2101, 3201, 3400, 1120].map((fid) => { const v = avg(d.list, fid); return v ? `<div class="cell"><span class="fuel">${FUEL[fid].short}</span>${seg(v, fid, 'l', true)}<span class="note">${cents(v - NAT[fid])} face à média nacional</span></div>` : ''; }).join('')}</div></div></section>`,
       body: `<section class="block" aria-labelledby="db-t"><div class="wrap"><div class="head"><div><h2 id="db-t">Os mais baratos em ${esc(d.name)}</h2><p>Os 8 postos com o preço mais baixo hoje no distrito.</p></div></div><div class="grid2"><div><h3 style="font-size:22px;margin-bottom:12px">Gasóleo</h3><div class="list">${cheapest(2101).map((s, i) => stationRow(s, 2101, { best: i === 0 })).join('')}</div></div><div><h3 style="font-size:22px;margin-bottom:12px">Gasolina 95</h3><div class="list">${cheapest(3201).map((s, i) => stationRow(s, 3201, { best: i === 0 })).join('')}</div></div></div></div></section>
 <section class="block" aria-labelledby="dc-t"><div class="wrap"><div class="head"><div><h2 id="dc-t">Concelhos do distrito de ${esc(d.name)}</h2><p>Postos e preço médio de hoje em cada concelho.</p></div></div><div class="tbl"><table><thead><tr><th>Concelho</th><th class="num">Postos</th><th class="num">Gasóleo</th><th class="num">Gasolina 95</th></tr></thead><tbody>${cRows}</tbody></table></div></div></section>` +
@@ -465,9 +486,9 @@ for (const s of stations) {
     path: s.url, nav: '/postos/',
     title: `${s.n}: preços de hoje | Atesta`,
     description: `Posto ${s.b === 'Genérico' ? '' : s.B + ' '}em ${s.l || s.m} (${s.m}). Hoje: ${priceList}. Morada, como chegar e postos mais baratos perto.`,
-    h1Section: `<section class="hero"><div class="wrap">${c.html}<h1>${esc(s.n)}</h1><p class="sub">Posto ${s.b === 'Genérico' ? 'sem marca' : esc(s.B)} em ${esc(s.l || s.m)}, concelho de ${esc(m.name)}. Preços comunicados à DGEG.</p>
+    h1Section: `<section class="hero"><div class="wrap">${c.html}${s.g ? brandLogo(s.g, s.B) : ''}<h1>${esc(s.n)}</h1><p class="sub">Posto ${s.b === 'Genérico' ? 'sem marca' : esc(s.B)} em ${esc(s.l || s.m)}, concelho de ${esc(m.name)}. Preços comunicados à DGEG.</p>
 <div class="hero-grid"><div class="card prices" aria-label="Preços de hoje">${rows}</div>
-<div class="card facts"><dl><div><dt>Morada</dt><dd>${esc(addr)}</dd></div><div><dt>Marca</dt><dd style="display:flex;align-items:center;gap:10px">${s.g ? tile(s) : ''}${brandUrl.has(s.B) ? `<a href="${brandUrl.get(s.B)}">${esc(s.B)}</a>` : esc(s.B)}</dd></div><div><dt>Concelho</dt><dd><a href="${m.url}">${esc(m.name)}</a>, <a href="${d.url}">${esc(d.name)}</a></dd></div></dl>
+<div class="card facts"><dl><div><dt>Morada</dt><dd>${esc(addr)}</dd></div><div><dt>Marca</dt><dd>${brandUrl.has(s.B) ? `<a href="${brandUrl.get(s.B)}">${esc(s.B)}</a>` : esc(s.B)}</dd></div><div><dt>Concelho</dt><dd><a href="${m.url}">${esc(m.name)}</a>, <a href="${d.url}">${esc(d.name)}</a></dd></div></dl>
 <a class="btn btn-brand" href="https://www.google.com/maps/dir/?api=1&amp;destination=${s.lat},${s.lon}" rel="noopener" target="_blank">Como chegar</a></div></div></div></section>`,
     body: (others.length ? `<section class="block" aria-labelledby="ot-t"><div class="wrap"><div class="head"><div><h2 id="ot-t">Outros postos em ${esc(m.name)}</h2><p>Os mais baratos do concelho para ${FUEL[main].short === 'GPL' ? 'o GPL' : FUEL[main].fam === 'gasoleo' ? 'o gasóleo' : 'a gasolina 95'} hoje.</p></div><a class="btn btn-line" href="${m.url}">Ver todos em ${esc(m.name)}</a></div><div class="list">${others.map((x, i) => stationRow(x, main, { best: i === 0 && x.p[main] < s.p[main] })).join('')}</div></div></section>` : '') + appBand(),
     ld: [c.ld, ld], type: 'place',
@@ -494,7 +515,7 @@ for (const s of stations) {
       path: b.url, nav: '/postos/',
       title: `Preço do gasóleo e da gasolina nos postos ${b.name} hoje | Atesta`,
       description: `Preço médio de hoje nos ${b.list.length} postos ${b.name}: ${fids.map((fid) => `${FUEL[fid].short.toLowerCase()} a ${n3(avg(b.list, fid))} €`).join(', ')}. Os postos ${b.name} mais baratos por distrito.`,
-      h1Section: `<section class="hero"><div class="wrap">${cb.html}${b.list[0].g ? `<div class="brand-logo"><img src="/assets/logos/${b.list[0].g}.webp" alt="Logotipo ${esc(b.name)}" width="56" height="56"></div>` : ''}<h1>Preço do gasóleo e da gasolina nos postos ${esc(b.name)}</h1><p class="sub">Média de hoje nos ${int(b.list.length)} postos ${esc(b.name)} de Portugal continental. ${updLine}</p>
+      h1Section: `<section class="hero"><div class="wrap">${cb.html}${b.list[0].g ? brandLogo(b.list[0].g, b.name) : ''}<h1>Preço do gasóleo e da gasolina nos postos ${esc(b.name)}</h1><p class="sub">Média de hoje nos ${int(b.list.length)} postos ${esc(b.name)} de Portugal continental. ${updLine}</p>
 <div class="board">${fids.map((fid) => { const v = avg(b.list, fid); return `<div class="cell"><span class="fuel">${FUEL[fid].short}</span>${seg(v, fid, 'l', true)}<span class="note">${cents(v - NAT[fid])} face à média nacional</span></div>`; }).join('')}</div></div></section>`,
       body: `<section class="block" aria-labelledby="bc-t"><div class="wrap"><div class="head"><div><h2 id="bc-t">Postos ${esc(b.name)} mais baratos</h2><p>Os 8 com o gasóleo e a gasolina 95 mais baratos hoje.</p></div></div><div class="grid2"><div><h3 style="font-size:22px;margin-bottom:12px">Gasóleo</h3><div class="list">${priced(b.list, 2101).slice(0, 8).map((s, i) => stationRow(s, 2101, { best: i === 0, sub: `${s.l || s.m} · ${s.d}` })).join('')}</div></div><div><h3 style="font-size:22px;margin-bottom:12px">Gasolina 95</h3><div class="list">${priced(b.list, 3201).slice(0, 8).map((s, i) => stationRow(s, 3201, { best: i === 0, sub: `${s.l || s.m} · ${s.d}` })).join('')}</div></div></div></div></section>
 <section class="block" aria-labelledby="bd-t"><div class="wrap"><div class="head"><div><h2 id="bd-t">Postos ${esc(b.name)} por distrito</h2></div></div><div class="tbl"><table><thead><tr><th>Distrito</th><th class="num">Postos</th><th class="num">Gasóleo</th><th class="num">Gasolina 95</th></tr></thead><tbody>${dRows.map(([d, l]) => `<tr><td><a href="${d.url}">${esc(d.name)}</a></td><td class="num">${l.length}</td><td class="num">${avg(l, 2101) ? n3(avg(l, 2101)) + ' €' : '—'}</td><td class="num">${avg(l, 3201) ? n3(avg(l, 3201)) + ' €' : '—'}</td></tr>`).join('')}</tbody></table></div></div></section>` + appBand(),
@@ -514,9 +535,20 @@ for (const s of stations) {
     path: '/app/', nav: '',
     title: 'Atesta: app de preços dos combustíveis para Android',
     description: 'A app Atesta mostra os postos mais baratos perto de ti, avisa-te quando o preço baixa e diz-te se compensa esperar por segunda-feira. Grátis para Android.',
-    h1Section: `<section class="hero"><div class="wrap">${c.html}<h1>Atesta, a app dos preços dos combustíveis</h1><p class="sub">Os postos mais baratos perto de ti, alertas de preço e a previsão de segunda-feira. Grátis, para Android, com os preços oficiais da DGEG.</p><div class="card soon"><span class="soon-dot" aria-hidden="true"></span><div><b>Brevemente no Google Play</b><p>A app está quase pronta. Quando estiver publicada, o botão para a instalar aparece aqui e em todas as páginas do Atesta.</p></div></div></div></section>`,
+    h1Section: `<section class="hero"><div class="wrap">${c.html}${heroTop(`<h1>Atesta, a app dos preços dos combustíveis</h1><p class="sub">Os postos mais baratos perto de ti, alertas de preço e a previsão de segunda-feira. Grátis, para Android, com os preços oficiais da DGEG.</p>`, ILL.phone(priced(stations, 2101)[0].p[2101], priced(stations, 2101)[3].p[2101]))}<div class="card soon"><span class="soon-dot" aria-hidden="true"></span><div><b>Brevemente no Google Play</b><p>A app está quase pronta. Quando estiver publicada, o botão para a instalar aparece aqui e em todas as páginas do Atesta.</p></div></div></div></section>`,
     body: `<section class="block" aria-labelledby="af-t"><div class="wrap"><div class="head"><div><h2 id="af-t">O que faz a app Atesta</h2></div></div><div class="types">${feats.map(([t, p]) => `<div class="card type"><h3>${t}</h3><p>${p}</p></div>`).join('')}</div></div></section>`,
     ld: [c.ld, { '@context': 'https://schema.org', '@type': 'MobileApplication', name: 'Atesta', operatingSystem: 'Android', applicationCategory: 'TravelApplication', offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' } }],
+  }));
+}
+
+// ---- Páginas legales ----
+for (const L of LEGAL) {
+  const c = crumbs([['/', 'Atesta'], [L.path, L.nav]]);
+  await out(L.path, layout({
+    path: L.path, nav: '', title: L.title, description: L.description,
+    h1Section: `<section class="hero"><div class="wrap">${c.html}${heroTop(`<h1>${L.h1}</h1><p class="sub">${L.sub}</p>`, ILL.shield())}</div></section>`,
+    body: `<section class="block"><div class="wrap prose">${L.body}</div></section>`,
+    ld: [c.ld],
   }));
 }
 
@@ -528,8 +560,7 @@ for (const s of stations) {
   await writeFile(OUT + '/404.html', html.replace('<link rel="canonical"', '<meta name="robots" content="noindex"><link rel="canonical"'));
 }
 await mkdir(OUT + '/dados', { recursive: true });
-await writeFile(OUT + '/dados/postos.json', JSON.stringify(stations.map((s) => ({ n: s.n, t: tileText(s.B), g: s.g || undefined, l: `${s.B} · ${s.l || s.m}`, u: s.url, lat: s.lat, lon: s.lon,
-  p: Object.fromEntries([2101, 3201, 1120].filter((f) => s.p[f]).map((f) => [f, s.p[f]])) }))));
+await writeFile(OUT + '/dados/postos.json', JSON.stringify(stations.map((s) => ({ n: s.n, t: tileText(s.B), g: s.g || undefined, l: `${s.B} · ${s.l || s.m}`, m: s.m, d: s.ds, u: s.url, lat: s.lat, lon: s.lon, p: s.p }))));
 await writeFile(OUT + '/sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${pages.map((p) => `<url><loc>${SITE}${p}</loc><lastmod>${today}</lastmod></url>`).join('\n')}\n</urlset>\n`);
 await writeFile(OUT + '/robots.txt', INDEX ? `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n` : 'User-agent: *\nDisallow: /\n');
 await writeFile(OUT + '/_headers', `/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n/dados/*\n  Cache-Control: public, max-age=900\n/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n${INDEX ? '' : '  X-Robots-Tag: noindex\n'}`);

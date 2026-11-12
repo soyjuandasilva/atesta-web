@@ -8,6 +8,12 @@ const ROOT = 'dist';
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.xml': 'application/xml', '.txt': 'text/plain', '.woff2': 'font/woff2', '.svg': 'image/svg+xml' };
 
 createServer(async (req, res) => {
+  // /api/onde lo responde Cloudflare en la web publicada. Aquí, para probar: ATESTA_ZONA="Lisboa,38.72,-9.14"
+  if (req.url.startsWith('/api/onde')) {
+    const [city, lat, lon] = (process.env.ATESTA_ZONA || '').split(',');
+    res.writeHead(200, { 'Content-Type': TYPES['.json'] }).end(JSON.stringify(city ? { country: 'PT', city, lat: +lat, lon: +lon } : {}));
+    return;
+  }
   let p = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)).replace(/^([/\\])+/, '');
   if (p.includes('..')) { res.writeHead(400).end(); return; }
   let file = join(ROOT, p);

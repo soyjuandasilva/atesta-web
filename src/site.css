@@ -137,8 +137,10 @@ a.cell:hover { background: var(--bg) }
 .tile { width: 44px; height: 44px; border-radius: 10px; background: var(--surface-2); display: grid; place-items: center; font: 800 12px/1 var(--f-display); letter-spacing: .03em; color: var(--ink-2); text-align: center; overflow: hidden }
 .tile.logo { background: #FFFFFF; box-shadow: inset 0 0 0 1px var(--line); padding: 4px }
 .tile img { width: 100%; height: 100%; object-fit: contain; display: block }
-.brand-logo { width: 72px; height: 72px; border-radius: 16px; background: #FFFFFF; box-shadow: inset 0 0 0 1px var(--line); padding: 8px; display: grid; place-items: center; margin-top: 18px }
+.brand-logo { width: 104px; height: 104px; border-radius: 22px; background: #FFFFFF; box-shadow: inset 0 0 0 1px var(--line), 0 10px 24px -16px rgba(8,19,14,.4); padding: 14px; display: grid; place-items: center; margin-top: 20px }
 .brand-logo img { width: 100%; height: 100%; object-fit: contain }
+.brand-logo.wide { width: 248px; height: 88px; padding: 14px 22px }
+@media (max-width: 520px) { .brand-logo { width: 84px; height: 84px; padding: 12px } .brand-logo.wide { width: 200px; height: 72px } }
 .row .n { font: 700 18px/1.15 var(--f-display); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
 .row .a { font-size: 14px; color: var(--ink-2); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
 .row .km { font-size: 14px; color: var(--ink-2); white-space: nowrap }
@@ -150,7 +152,13 @@ select { font-weight: 600; font-size: 15px; background: var(--surface); border: 
 .chips { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--surface); flex-wrap: wrap }
 .chips button { border: 0; background: transparent; border-radius: 999px; padding: 8px 14px; min-height: 38px; font-weight: 600; font-size: 15px; color: var(--ink-2) }
 .chips button[aria-pressed="true"] { background: var(--ink); color: var(--bg) }
-.status { font-size: 15px; color: var(--ink-2); margin-top: 12px; min-height: 1.5em }
+.status { font-size: 15px; color: var(--ink-2); margin: 14px 0 12px; min-height: 1.5em }
+.status b { color: var(--ink) }
+.linkish { border: 0; background: none; padding: 0; color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer }
+.chips.fuels { margin-bottom: 14px; border-radius: 16px }
+.chips.fuels button { display: inline-flex; align-items: center; gap: 8px }
+.chips.fuels i { width: 10px; height: 10px; border-radius: 3px; display: inline-block }
+.controls .btn svg { flex: none }
 
 /* Gráfico */
 .chart-card { padding: 20px 20px 12px }
@@ -213,8 +221,19 @@ td small { display: block; color: var(--ink-2); font-size: 14px }
 .soon { display: flex; gap: 16px; align-items: flex-start; padding: 20px 22px; margin-top: 24px; max-width: 620px }
 .soon b { font: 700 22px/1.2 var(--f-display) } .soon p { color: var(--ink-2); margin-top: 4px }
 .soon-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 5px var(--warn-soft); margin-top: 8px; flex: none }
+/* Ilustraciones */
+.hero-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: end }
+.hero-text { min-width: 0 }
+.illus { width: clamp(180px, 22vw, 240px) } .illus:has(.ill-wide) { width: clamp(260px, 32vw, 360px) }
+.ill { display: block; width: 100%; height: auto }
+.ill .on { color: #F4F7F5 } .ill .off { color: #F4F7F5; opacity: .075 }
+@media (max-width: 760px) { .hero-top { grid-template-columns: minmax(0, 1fr) } .illus { display: none } }
+@media (prefers-reduced-motion: no-preference) { .illus { animation: rise .6s .1s cubic-bezier(.2,.7,.2,1) both } }
+
 .prose { max-width: 70ch; display: grid; gap: 14px; color: var(--ink-2) }
 .prose h2 { color: var(--ink); font-size: 26px; font-weight: 800; margin-top: 12px }
+.prose b { color: var(--ink) }
+.prose a { color: var(--ink); font-weight: 600 }
 
 @media (prefers-reduced-motion: no-preference) {
   .hero h1, .hero .board, .hero .hero-grid { animation: rise .5s cubic-bezier(.2,.7,.2,1) both }
