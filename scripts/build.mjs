@@ -351,6 +351,8 @@ const FAMPAGES = [
     faq: [['Quando muda o preço do gasóleo?', 'Os postos costumam mudar os preços à segunda-feira, conforme a variação do mercado na semana anterior. A meio da semana as notícias já dizem se vão subir ou descer.'],
       ['Qual é a diferença entre gasóleo simples e especial?', 'O especial leva aditivos que limpam o motor e custa mais alguns cêntimos por litro. Na Galp chama-se Evologic; na BP, Ultimate; na Repsol, Efitec. Para a maioria dos carros, o simples chega.'],
       ['Porque é que o gasóleo é mais barato em Espanha?', 'Em Espanha os impostos sobre os combustíveis são mais baixos. Junto à fronteira, como em Tui, Ayamonte ou Badajoz, muitos condutores portugueses atestam do outro lado.'],
+      ['O que é o desconto extraordinário do ISP?', 'É uma redução temporária do imposto sobre os produtos petrolíferos que o Governo aplica enquanto os preços estão altos. O valor é revisto por portaria, normalmente à sexta-feira, e vale para a semana seguinte. Quando o desconto diminui, parte da descida das cotações não chega à bomba.'],
+      ['O que é o preço de referência do gasóleo?', 'É um preço calculado todas as semanas pela ENSE (Entidade Nacional para o Setor Energético) a partir das cotações internacionais e de custos médios de logística e distribuição. Serve para comparar com o preço de venda nos postos e perceber se as margens estão altas.'],
       ['De onde vêm os preços?', 'Da DGEG. Cada posto tem de comunicar o preço sempre que o muda, e o Atesta lê esses dados várias vezes por dia.']] },
   { fam: 'gasolina', path: '/gasolina/', main: 3201, types: [3201, 3205, 3400], h1: 'Preço da gasolina hoje em Portugal', name: 'gasolina',
     faq: [['Quando muda o preço da gasolina?', 'Os postos costumam mudar os preços à segunda-feira, conforme a variação do mercado na semana anterior. A meio da semana as notícias já dizem se vão subir ou descer.'],
@@ -370,6 +372,48 @@ const TYPE_TEXT = {
   3205: 'Gasolina 95 com aditivos de limpeza, como a Galp Evologic ou a BP Ultimate.',
   3400: 'Mais octanas, para os motores que a pedem no manual.',
 };
+// Grupos de marcas para comparar márgenes (los impuestos son iguales en todo el país).
+const LOWCOST = ['Auchan', 'Intermarché', 'E.Leclerc', 'Petroprix', 'Plenergy', 'BXpress'];
+const TRADITIONAL = ['Galp', 'BP', 'Repsol', 'Cepsa', 'Moeve', 'Shell'];
+const groupAvg = (names, fid) => avg(stations.filter((s) => names.includes(s.B)), fid);
+/** Lo que se ahorra de media en 50 litros eligiendo el posto más barato del concelho en vez de la media. */
+function councilSaving(fid) {
+  const xs = districts.flatMap((d) => d.councils).map((c) => priced(c.list, fid)).filter((p) => p.length >= 3)
+    .map((p) => (mean(p.map((s) => s.p[fid])) - p[0].p[fid]) * 50);
+  return { eur: mean(xs), n: xs.length };
+}
+
+/** Texto de /gasoleo/: de qué está hecho el precio, por qué cambia entre postos y cómo pagar menos. */
+function gasoleoGuide() {
+  const fid = 2101, lc = groupAvg(LOWCOST, fid), tr = groupAvg(TRADITIONAL, fid), sv = councilSaving(fid);
+  const lcNames = LOWCOST.filter((b) => brandUrl.has(b)).map((b) => `<a href="${brandUrl.get(b)}">${b}</a>`);
+  const trNames = TRADITIONAL.filter((b) => brandUrl.has(b)).map((b) => `<a href="${brandUrl.get(b)}">${b}</a>`);
+  const join = (xs) => xs.slice(0, -1).join(', ') + ' e ' + xs[xs.length - 1];
+  return `<section class="block" aria-labelledby="guia-t"><div class="wrap prose">
+<h2 id="guia-t">O que faz o preço do gasóleo</h2>
+<p>Cada litro de gasóleo que pagas na bomba junta quatro partes:</p>
+<ul>
+<li><b>A cotação internacional do gasóleo já refinado</b>, negociada em dólares. Por isso o câmbio entre o euro e o dólar também conta: se o euro perde valor, o gasóleo fica mais caro mesmo que a cotação não mexa.</li>
+<li><b>Os custos e as margens</b> de quem refina, transporta, armazena e vende, incluindo o próprio posto.</li>
+<li><b>O ISP e a taxa de carbono</b>, valores fixos por litro definidos pelo Estado. Enquanto os preços estiverem altos, o Governo aplica um desconto extraordinário no ISP, revisto por portaria, normalmente à sexta-feira.</li>
+<li><b>O IVA de 23 %</b>, que se aplica sobre tudo o resto, impostos incluídos.</li>
+</ul>
+<p>É por isso que o preço do gasóleo muda sobretudo à segunda-feira: os postos ajustam as tabelas à variação das cotações e do câmbio na semana anterior e ao novo valor do desconto do ISP. A <a href="/proxima-semana/">previsão da próxima semana</a> diz-te se deve subir ou descer.</p>
+
+<h2>Porque é que o gasóleo custa diferente de posto para posto</h2>
+<p>Os impostos são iguais em todo o país. O que muda é a margem de cada marca e de cada posto. Hoje, nos postos de hipermercado e de marcas low-cost (${join(lcNames)}), o gasóleo simples custa em média ${n3(lc)} €, contra ${n3(tr)} € nas marcas tradicionais (${join(trNames)}): uma diferença de ${n1((tr - lc) * 100)} cêntimos por litro, ou ${n2((tr - lc) * 50)} € num depósito de 50 litros.</p>
+<p>A localização também pesa. Os postos de autoestrada e do centro das cidades costumam ser mais caros; onde há vários postos perto uns dos outros, a concorrência puxa os preços para baixo.</p>
+
+<h2>Como pagar menos pelo gasóleo</h2>
+<ul>
+<li><b>Compara antes de atestar.</b> Em ${sv.n} concelhos com pelo menos três postos, escolher o mais barato em vez de um posto com o preço médio do concelho poupa, em média, ${n2(sv.eur)} € num depósito de 50 litros. Vê os <a href="/postos/">postos do teu concelho</a>.</li>
+<li><b>Atesta antes de uma subida.</b> Se a previsão diz que o gasóleo sobe na segunda-feira, abastece até domingo; se desce, espera, se puderes.</li>
+<li><b>Prefere o gasóleo simples.</b> O especial custa hoje, em média, ${n1((NAT[2105] - NAT[2101]) * 100)} cêntimos a mais por litro. Para a maioria dos carros, o simples chega.</li>
+<li><b>Usa os descontos.</b> Os cartões das marcas e os talões dos supermercados descontam alguns cêntimos por litro.</li>
+<li><b>Gasta menos.</b> Pneus com a pressão certa, menos peso no carro e uma condução suave reduzem o consumo.</li>
+</ul></div></section>`;
+}
+
 for (const P of FAMPAGES) {
   const fid = P.main, f = FUEL[fid], list = priced(stations, fid), ch = weekChange(fid);
   const cheap = list[0], dear = list[list.length - 1];
@@ -393,6 +437,7 @@ ${nextCard(P.fam)}</div></div></section>`,
 <div class="tbl"><table><thead><tr><th>Distrito</th><th class="num">Média</th><th class="num">Face à média</th></tr></thead><tbody>${dRows.map(([d, v]) => `<tr><td><a href="${d.url}">${esc(d.name)}</a></td>${diffCell(v, NAT[fid])}</tr>`).join('')}</tbody></table></div>
 <div class="tbl"><table><thead><tr><th>Marca</th><th class="num">Média</th><th class="num">Face à média</th></tr></thead><tbody>${bRows.map(([b, v, n]) => `<tr><td>${brandUrl.has(b.name) ? `<a href="${b.url}">${esc(b.name)}</a>` : esc(b.name)}<small>${int(n)} postos</small></td>${diffCell(v, NAT[fid])}</tr>`).join('')}</tbody></table></div></div></div></section>` +
       types +
+      (P.fam === 'gasoleo' ? gasoleoGuide() : '') +
       `<section class="block" aria-labelledby="faq-t"><div class="wrap"><div class="head"><div><h2 id="faq-t">Perguntas sobre o preço ${FAM[P.fam].of}</h2></div></div><div class="card faq">${P.faq.map(([q, a], i) => `<details${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><p class="ans">${esc(a)}</p></details>`).join('')}</div></div></section>` +
       appBand(`Alertas ${FAM[P.fam].of} no teu telemóvel`),
     ld: [c.ld, faqLd],
@@ -405,6 +450,28 @@ ${nextCard(P.fam)}</div></div></section>`,
   const c = crumbs([['/', 'Atesta'], ['/proxima-semana/', 'Próxima semana']]);
   const recent = news.filter((n) => !n.t || Date.now() - n.t <= 7 * 86400000).sort((a, b) => (b.t || 0) - (a.t || 0));
   const fmtNewsDate = (t) => { if (!t) return ''; const d = new Date(t); return `${d.getDate()}/${d.getMonth() + 1}`; };
+  const vtxt = (k) => ({ up: 'deve subir', down: 'deve descer', unclear: 'não tem previsão clara' }[verdicts[k].kind]);
+  const psFaq = [
+    ['Os combustíveis sobem ou descem na próxima semana?', `Para segunda-feira, ${longDate(nextMonday)}, o gasóleo ${vtxt('gasoleo')}, a gasolina ${vtxt('gasolina')} e o GPL ${vtxt('gpl')}, segundo as notícias dos últimos 7 dias.`],
+    ['Quando mudam os preços dos combustíveis em Portugal?', 'Sobretudo à segunda-feira. Os postos ajustam as tabelas à variação das cotações internacionais, do câmbio euro-dólar e do desconto do ISP da semana anterior.'],
+    ['Quando sai a previsão para a próxima semana?', 'As primeiras estimativas aparecem na imprensa à quinta-feira e confirmam-se à sexta, depois do fecho dos mercados e da portaria do ISP. O Atesta atualiza a previsão várias vezes por dia.'],
+    ['A previsão é fiável?', 'Costuma acertar na direção, porque a imprensa calcula-a a partir das cotações da semana. Os cêntimos exatos variam de posto para posto e o mercado ainda pode mexer até ao fim da semana.'],
+  ];
+  /** «Na segunda-feira, o gasóleo desceu X»: lo que pasó el último lunes, con nuestro histórico. */
+  function mondayBlock() {
+    const lastMon = new Date(todayD); lastMon.setUTCDate(todayD.getUTCDate() - ((todayD.getUTCDay() + 6) % 7));
+    const iso = (d) => d.toISOString().slice(0, 10);
+    const before = days.filter((d) => d < iso(lastMon)).pop();
+    const after = days.filter((d) => d >= iso(lastMon)).pop();
+    if (!before || !after) return '';
+    const rows = [[2101, 'O gasóleo simples'], [3201, 'A gasolina 95'], [1120, 'O GPL Auto']].map(([fid, name]) => {
+      const a = history[before][fid]?.nat, b = history[after][fid]?.nat;
+      if (a == null || b == null) return '';
+      const dlt = b - a;
+      return `<li><b>${name}</b> ${Math.abs(dlt) < 0.0005 ? 'ficou igual' : `${dlt > 0 ? 'subiu' : 'desceu'} ${n1(Math.abs(dlt) * 100)} cêntimos`}, para ${n3(b)} € de média.</li>`;
+    }).filter(Boolean);
+    return rows.length ? `<section class="block" aria-labelledby="sem-t"><div class="wrap prose"><h2 id="sem-t">O que mudou na segunda-feira, ${dayMonth(lastMon)}</h2><p>Comparação entre a média de ${dayMonth(ymd(before))} e a de hoje, com os preços de todos os postos:</p><ul>${rows.join('')}</ul></div></section>` : '';
+  }
   const cards = Object.keys(FAM).map((k) => { const v = verdicts[k]; return `<div class="card today"><div class="today-top"><h2>${k === 'gpl' ? 'GPL' : k === 'gasoleo' ? 'Gasóleo' : 'Gasolina'}</h2>${ARROW[v.kind] || ''}</div><div style="font:800 34px/1.04 var(--f-display);color:var(--${v.kind === 'up' ? 'up' : v.kind === 'down' ? 'down' : 'warn'})">${VERDICT[v.kind].say}</div><p class="muted">${VERDICT[v.kind].tip}</p><p class="muted">Hoje: ${seg(NAT[FAM[k].main], FAM[k].main, 's')} <a href="${FAM[k].page}">Ver o preço ${FAM[k].of}</a></p></div>`; }).join('');
   const html = layout({
     path: '/proxima-semana/', nav: '/proxima-semana/',
@@ -413,8 +480,28 @@ ${nextCard(P.fam)}</div></div></section>`,
     h1Section: `<section class="hero"><div class="wrap">${c.html}${heroTop(`<h1>Preço dos combustíveis na próxima semana</h1><p class="sub">Previsão para segunda-feira, ${longDate(nextMonday)}, quando os postos mudam os preços. Atualizada várias vezes por dia com as notícias desta semana.</p>`, ILL.week(nextMonday, verdicts.gasoleo.kind))}
 <div class="types" style="margin-top:28px">${cards}</div></div></section>`,
     body: `<section class="block" aria-labelledby="nw-t"><div class="wrap"><div class="head"><div><h2 id="nw-t">Notícias desta semana sobre os preços</h2><p>As notícias em que se baseia a previsão, dos últimos 7 dias.</p></div></div>${recent.length ? `<div class="card news">${recent.slice(0, 12).map((n) => `<a href="${esc(n.link)}" rel="nofollow noopener" target="_blank"><b>${esc(n.title)}</b><span>${esc(n.source)} · ${fmtNewsDate(n.t)}</span></a>`).join('')}</div>` : '<div class="card empty">Ainda não há notícias desta semana sobre os preços.</div>'}</div></section>
-<section class="block" aria-labelledby="como-t"><div class="wrap prose"><h2 id="como-t">Como fazemos a previsão</h2><p>Em Portugal os postos mudam os preços à segunda-feira, conforme a variação das cotações internacionais e do câmbio na semana anterior. A partir de quinta-feira, a imprensa já publica se os combustíveis vão subir ou descer e quantos cêntimos.</p><p>O Atesta lê essas notícias várias vezes por dia e conta quantas apontam para uma subida ou para uma descida de cada combustível. Quando não há acordo, dizemos que não há previsão clara. É uma previsão: o preço final depende de cada posto.</p></div></section>` + appBand('A previsão de segunda-feira no teu telemóvel'),
-    ld: [c.ld],
+${mondayBlock()}
+<section class="block" aria-labelledby="como-t"><div class="wrap prose">
+<h2 id="como-t">Quando mudam os preços dos combustíveis</h2>
+<p>Em Portugal, os postos mudam os preços sobretudo à segunda-feira. As tabelas novas refletem o que aconteceu na semana anterior: a variação das cotações internacionais dos combustíveis refinados, o câmbio entre o euro e o dólar e o valor do desconto extraordinário do ISP, que o Governo revê por portaria, normalmente à sexta-feira.</p>
+<p>Como as cotações são públicas, a partir de quinta-feira a imprensa já consegue estimar se a gasolina, o gasóleo e o GPL vão subir ou descer e quantos cêntimos. É essa estimativa que resumimos no topo da página.</p>
+<h2>O que faz os preços subir ou descer</h2>
+<ul>
+<li><b>As cotações do gasóleo e da gasolina já refinados</b>, que acompanham o preço do petróleo Brent, mas não exatamente: uma refinaria parada ou um inverno frio podem mexer mais com o gasóleo do que com a gasolina.</li>
+<li><b>O câmbio euro-dólar.</b> Os combustíveis compram-se em dólares; com o euro mais fraco, ficam mais caros.</li>
+<li><b>Os impostos.</b> O ISP e a taxa de carbono são valores fixos por litro e o IVA de 23 % aplica-se sobre tudo. Quando o Governo reduz o desconto extraordinário do ISP, parte da descida das cotações não chega à bomba.</li>
+<li><b>As decisões da OPEP+ e a geopolítica</b>, que mexem com o preço do petróleo de um dia para o outro.</li>
+</ul>
+<h2>Quanto vale a variação no teu depósito</h2>
+<p>Uma subida ou descida de poucos cêntimos parece pouco, mas multiplica por cada litro:</p>
+</div><div class="wrap"><div class="tbl" style="max-width:640px"><table><thead><tr><th>Variação por litro</th><th class="num">40 litros</th><th class="num">50 litros</th><th class="num">60 litros</th></tr></thead><tbody>${[1, 2, 5, 10].map((c) => `<tr><td>${c} ${c === 1 ? 'cêntimo' : 'cêntimos'}</td>${[40, 50, 60].map((l) => `<td class="num">${n2(c * l / 100)} €</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>
+<div class="wrap prose" style="margin-top:28px">
+<h2>Como fazemos a previsão</h2>
+<p>O Atesta lê as notícias sobre o preço dos combustíveis várias vezes por dia e separa o que cada título diz de cada combustível: em «gasóleo sobe e gasolina desce», a subida conta para o gasóleo e a descida para a gasolina. Depois conta quantas notícias dos últimos 7 dias apontam para cada lado. Quando não há acordo, dizemos que não há previsão clara.</p>
+<p>É uma previsão e não uma garantia: o preço final depende do mercado até ao fim da semana e de cada posto. Na segunda-feira, vê os <a href="/postos/">preços reais de cada posto</a>.</p>
+</div></section>
+<section class="block" aria-labelledby="faqps-t"><div class="wrap"><div class="head"><div><h2 id="faqps-t">Perguntas sobre os preços da próxima semana</h2></div></div><div class="card faq">${psFaq.map(([q, a], i) => `<details${i === 0 ? ' open' : ''}><summary>${esc(q)}</summary><p class="ans">${esc(a)}</p></details>`).join('')}</div></div></section>` + appBand('A previsão de segunda-feira no teu telemóvel'),
+    ld: [c.ld, { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: psFaq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) }],
   });
   await out('/proxima-semana/', html);
 }
