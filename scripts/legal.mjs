@@ -39,7 +39,7 @@ ${contact}
 <p>As letras do site são servidas pelo próprio Atesta, sem ligações ao Google Fonts.</p>
 
 <h2>Ligações para outros sites</h2>
-<p>Algumas ligações levam a outros sites: as notícias da previsão semanal e o botão «Como chegar», que abre o Google Maps. Quando os abres, aplica-se a política de privacidade desses sites.</p>
+<p>Algumas ligações levam a outros sites: as notícias da previsão semanal e o botão «Como chegar», que abre a app de mapas que escolheres (Google Maps, Waze ou Apple Mapas). Quando os abres, aplica-se a política de privacidade desses sites.</p>
 
 <h2>Os teus direitos</h2>
 <p>Podes pedir o acesso, a retificação, o apagamento ou a portabilidade dos teus dados, e opor-te ou pedir a limitação do tratamento. Escreve para <a href="mailto:${OWNER.email}">${OWNER.email}</a>. Respondemos no prazo de um mês.</p>

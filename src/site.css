@@ -50,11 +50,52 @@ nav.main a:hover { color: var(--ink); background: var(--surface-2) }
 nav.main a[aria-current="page"] { color: var(--ink); background: var(--brand-soft) }
 header .btn { margin-left: auto }
 @media (max-width: 920px) { nav.main { display: none } }
-.subnav { display: none; overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: none }
-.subnav .wrap { display: flex; gap: 6px; padding-block: 8px; width: max-content; min-width: 100% }
-.subnav a { text-decoration: none; padding: 7px 12px; border-radius: 999px; font-weight: 600; font-size: 15px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--line); white-space: nowrap }
-.subnav a[aria-current="page"] { color: var(--ink); background: var(--brand-soft); border-color: transparent }
-@media (max-width: 920px) { .subnav { display: block } }
+
+/* Menú del móvil (details/summary: funciona también sin JavaScript) */
+.menu { display: none }
+.menu summary { list-style: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px 0 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font: 700 15px/1 var(--f-display); letter-spacing: .02em; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent }
+.menu summary::-webkit-details-marker { display: none }
+.menu summary svg path { transition: transform .2s ease-out, opacity .2s ease-out; transform-origin: 12px 12px }
+.menu[open] summary { background: var(--surface-2) }
+.menu[open] summary .l1 { transform: translateY(5px) rotate(45deg) }
+.menu[open] summary .l2 { opacity: 0 }
+.menu[open] summary .l3 { transform: translateY(-5px) rotate(-45deg) }
+.menu .panel { position: absolute; left: 0; right: 0; top: 100%; background: var(--bg); border-bottom: 1px solid var(--line); box-shadow: 0 24px 40px -24px rgba(8,19,14,.45); max-height: calc(100dvh - 60px); overflow-y: auto; overscroll-behavior: contain }
+.menu .panel .wrap { padding-block: 8px 20px; display: block; height: auto }
+.menu .mh { font-size: 13px; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: .06em; margin: 14px 4px 6px }
+.menu ul { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden }
+.menu li + li { border-top: 1px solid var(--line) }
+.menu ul a { display: flex; align-items: center; gap: 14px; padding: 12px 14px; text-decoration: none; min-height: 60px }
+.menu ul a:active { background: var(--surface-2) }
+.menu ul a[aria-current="page"] { background: var(--brand-soft) }
+.menu ul b { display: block; font: 700 18px/1.2 var(--f-display) }
+.menu ul small { display: block; font-size: 14px; color: var(--ink-2); line-height: 1.3 }
+.menu .mi { width: 36px; height: 36px; border-radius: 10px; background: var(--surface-2); display: grid; place-items: center; flex: none; color: var(--brand) }
+.menu .mi i { width: 14px; height: 14px; border-radius: 50%; background: var(--c) }
+.menu .panel .btn { display: flex; margin-left: 0; width: 100%; margin: 18px 0 0 }
+@media (max-width: 920px) { .menu { display: block } header.top .wrap { gap: 10px } }
+@media (max-width: 480px) { header.top > .wrap > .btn { display: none } .menu { margin-left: auto } }
+@media (prefers-reduced-motion: no-preference) { .menu[open] .panel { animation: drop .18s ease-out } }
+@keyframes drop { from { opacity: 0; transform: translateY(-6px) } }
+body.menu-open { overflow: hidden }
+
+/* Como chegar: elegir app de mapas */
+.route { border: 0; padding: 0; margin: auto auto 0; width: 100%; max-width: 480px; background: transparent; color: var(--ink) }
+.route::backdrop { background: rgba(4,12,8,.5) }
+.route .sheet { background: var(--surface); border-radius: 22px 22px 0 0; padding: 10px 16px max(18px, env(safe-area-inset-bottom, 0px)); box-shadow: 0 -10px 40px -10px rgba(0,0,0,.35) }
+.route .grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 12px }
+.route h2 { font-size: 22px; font-weight: 800 }
+.route .to { color: var(--ink-2); font-size: 15px; margin-top: 2px }
+.route ul { list-style: none; margin: 14px 0 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden }
+.route li + li { border-top: 1px solid var(--line) }
+.route ul a { display: flex; align-items: center; gap: 14px; padding: 12px 14px; min-height: 60px; text-decoration: none; font: 700 18px/1.2 var(--f-display) }
+.route ul a:hover, .route ul a:active { background: var(--bg) }
+.route ul a small { display: block; font: 400 14px/1.3 var(--f-body); color: var(--ink-2) }
+.route .ico { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; flex: none; color: #fff }
+.route .close { display: flex; width: 100%; margin-top: 12px }
+@media (min-width: 600px) { .route { margin: auto } .route .sheet { border-radius: 22px; padding-bottom: 18px } .route .grab { display: none } }
+@media (prefers-reduced-motion: no-preference) { .route[open] .sheet { animation: up .22s cubic-bezier(.2,.7,.2,1) } }
+@keyframes up { from { transform: translateY(24px); opacity: 0 } }
 
 footer.foot { margin-top: 64px; padding-block: 44px 56px; border-top: 1px solid var(--line); font-size: 15px; color: var(--ink-2) }
 footer.foot .cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px }

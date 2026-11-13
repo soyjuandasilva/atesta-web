@@ -252,6 +252,22 @@ ${lists.join('\n')}<div class="list" data-dyn-list hidden></div>
 <p style="margin-top:14px"><a data-more href="/postos/">Ver todos os distritos</a></p></div></section>`;
 }
 
+// Menú del móvil: grupos con iconos en vez de una fila que hay que deslizar.
+const MENU = [
+  ['Preços de hoje', [['/gasoleo/', 'Gasóleo', 'Média nacional e postos mais baratos', 2101], ['/gasolina/', 'Gasolina', 'Gasolina 95 e 98', 3201], ['/gpl/', 'GPL', 'Autogás', 1120]]],
+  ['Previsão e postos', [['/proxima-semana/', 'Próxima semana', 'Sobe ou desce na segunda-feira?', 'trend'], ['/postos/', 'Postos por distrito', 'Todos os postos do país', 'pin'], ['/marcas/', 'Marcas', 'Galp, Repsol, BP, Prio e outras', 'tag']]],
+];
+const MENU_ICON = {
+  trend: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+  pin: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  tag: '<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/>',
+};
+function menuHtml(nav, path) {
+  const cur = (u) => u === path || (u === nav && !MENU.some(([, items]) => items.some(([x]) => x === path)));
+  return MENU.map(([h, items]) => `<p class="mh">${h}</p><ul>${items.map(([u, t, d, ic]) => `<li><a href="${u}"${cur(u) ? ' aria-current="page"' : ''}><span class="mi"${typeof ic === 'number' ? ` style="--c:${FUEL[ic].color}"` : ''}>${typeof ic === 'number' ? '<i></i>' : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MENU_ICON[ic]}</svg>`}</span><span><b>${t}</b><small>${d}</small></span></a></li>`).join('')}</ul>`).join('')
+    + `<a class="btn btn-brand" href="/app/">App Atesta para Android</a>`;
+}
+
 // ---------- Plantilla ----------
 const pages = [];
 let CSS_V = '', JS_V = '';
@@ -279,8 +295,9 @@ ${lds}
 <body>
 ${SPRITE}
 <a class="skip" href="#conteudo">Saltar para o conteúdo</a>
-<header class="top"><div class="wrap"><a class="brand" href="/" aria-label="Atesta, página inicial"><span class="mark">${LOGO}</span>Atesta</a><nav class="main" aria-label="Secções">${navHtml}</nav><a class="btn btn-brand" href="/app/">App Atesta</a></div></header>
-<nav class="subnav" aria-label="Secções"><div class="wrap">${navHtml}</div></nav>
+<header class="top"><div class="wrap"><a class="brand" href="/" aria-label="Atesta, página inicial"><span class="mark">${LOGO}</span>Atesta</a><nav class="main" aria-label="Secções">${navHtml}</nav><a class="btn btn-brand" href="/app/">App Atesta</a>
+<details class="menu" data-menu><summary aria-label="Menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path class="l1" d="M4 7h16"/><path class="l2" d="M4 12h16"/><path class="l3" d="M4 17h16"/></svg><span>Menu</span></summary>
+<nav class="panel" aria-label="Menu"><div class="wrap">${menuHtml(nav, path)}</div></nav></details></div></header>
 <main id="conteudo">
 ${h1Section}
 ${body}
@@ -583,7 +600,7 @@ for (const s of stations) {
     h1Section: `<section class="hero"><div class="wrap">${c.html}${heroTop(`${s.g ? brandLogo(s.g, s.B) : ''}<h1>${esc(s.n)}</h1><p class="sub">Posto ${s.b === 'Genérico' ? 'sem marca' : esc(s.B)} em ${esc(s.l || s.m)}, concelho de ${esc(m.name)}. Preços comunicados à DGEG.</p>`, ILL.spot(s.g ? `/assets/logos/${s.g}.webp` : null, main, s.p[main], s.l || s.m))}
 <div class="hero-grid"><div class="card prices" aria-label="Preços de hoje">${rows}</div>
 <div class="card facts"><dl><div><dt>Morada</dt><dd>${esc(addr)}</dd></div><div><dt>Marca</dt><dd>${brandUrl.has(s.B) ? `<a href="${brandUrl.get(s.B)}">${esc(s.B)}</a>` : esc(s.B)}</dd></div><div><dt>Concelho</dt><dd><a href="${m.url}">${esc(m.name)}</a>, <a href="${d.url}">${esc(d.name)}</a></dd></div></dl>
-<a class="btn btn-brand" href="https://www.google.com/maps/dir/?api=1&amp;destination=${s.lat},${s.lon}" rel="noopener" target="_blank">Como chegar</a></div></div></div></section>`,
+<a class="btn btn-brand" href="https://www.google.com/maps/dir/?api=1&amp;destination=${s.lat},${s.lon}" rel="noopener" target="_blank" data-route data-lat="${s.lat}" data-lon="${s.lon}" data-name="${esc(s.n)}">Como chegar</a></div></div></div></section>`,
     body: SUM.posto(s, m, d, main) + (others.length ? `<section class="block" aria-labelledby="ot-t"><div class="wrap"><div class="head"><div><h2 id="ot-t">Outros postos em ${esc(m.name)}</h2><p>Os mais baratos do concelho para ${FUEL[main].short === 'GPL' ? 'o GPL' : FUEL[main].fam === 'gasoleo' ? 'o gasóleo' : 'a gasolina 95'} hoje.</p></div><a class="btn btn-line" href="${m.url}">Ver todos em ${esc(m.name)}</a></div><div class="list">${others.map((x, i) => stationRow(x, main, { best: i === 0 && x.p[main] < s.p[main] })).join('')}</div></div></section>` : '') + appBand(),
     ld: [c.ld, ld], type: 'place',
   }));

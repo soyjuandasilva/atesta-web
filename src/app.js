@@ -119,6 +119,72 @@
     }
   });
 
+  // Menú del móvil: se cierra al elegir, con Escape o tocando fuera; bloquea el scroll de detrás.
+  document.querySelectorAll('[data-menu]').forEach(function (menu) {
+    var summary = menu.querySelector('summary');
+    function close() { menu.open = false; }
+    menu.addEventListener('toggle', function () {
+      document.body.classList.toggle('menu-open', menu.open);
+      summary.setAttribute('aria-expanded', menu.open ? 'true' : 'false');
+    });
+    summary.setAttribute('aria-expanded', 'false');
+    menu.querySelectorAll('.panel a').forEach(function (a) { a.addEventListener('click', close); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && menu.open) { close(); summary.focus(); } });
+    document.addEventListener('click', function (e) { if (menu.open && !menu.contains(e.target)) close(); });
+    window.matchMedia('(min-width: 921px)').addEventListener('change', function (m) { if (m.matches) close(); });
+  });
+
+  // «Como chegar»: en Android, un enlace geo: hace que el sistema muestre «Abrir con» con las apps
+  // instaladas (Maps, Waze, Uber…). En iPhone y en el ordenador no hay nada parecido, así que
+  // se ofrece una hoja propia. Sin JavaScript el enlace sigue abriendo Google Maps.
+  var ua = navigator.userAgent;
+  var isAndroid = /Android/i.test(ua);
+  var isApple = /iPhone|iPad|iPod|Macintosh/i.test(ua);
+  var touch = window.matchMedia('(pointer: coarse)').matches;
+  var routeDialog = null;
+  function routeApps(lat, lon, name) {
+    var ll = lat + ',' + lon;
+    var apps = [
+      { t: 'Google Maps', d: 'Rota no Google Maps', bg: '#1A73E8', u: 'https://www.google.com/maps/dir/?api=1&destination=' + ll + '&travelmode=driving',
+        i: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>' },
+      { t: 'Waze', d: 'Navegar com o Waze', bg: '#33CCFF', u: 'https://waze.com/ul?ll=' + ll + '&navigate=yes',
+        i: '<path d="M5 15a7 7 0 1 1 13.5-2.6c.4 1.3 1.5 1.9 1.5 3.1 0 1.5-1.6 2.5-3 2.5H9c-2.2 0-4-1.3-4-3z"/><circle cx="10" cy="11" r=".6" fill="currentColor"/><circle cx="14.5" cy="11" r=".6" fill="currentColor"/><circle cx="9" cy="19.5" r="1.4"/><circle cx="16" cy="19.5" r="1.4"/>' }
+    ];
+    if (isApple) apps.push({ t: 'Apple Mapas', d: 'Rota nos Mapas da Apple', bg: '#34C759', u: 'https://maps.apple.com/?daddr=' + ll + '&dirflg=d',
+      i: '<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>' });
+    return apps;
+  }
+  function openRoute(link) {
+    var lat = link.getAttribute('data-lat'), lon = link.getAttribute('data-lon'), name = link.getAttribute('data-name') || '';
+    if (!routeDialog) {
+      routeDialog = document.createElement('dialog');
+      routeDialog.className = 'route';
+      routeDialog.setAttribute('aria-labelledby', 'route-t');
+      document.body.appendChild(routeDialog);
+      routeDialog.addEventListener('click', function (e) {
+        if (e.target === routeDialog || e.target.closest('[data-close]') || e.target.closest('ul a')) routeDialog.close();
+      });
+    }
+    routeDialog.innerHTML = '<div class="sheet"><div class="grab" aria-hidden="true"></div><h2 id="route-t">Como chegar</h2><p class="to">' + esc(name) + '</p><ul>' +
+      routeApps(lat, lon, name).map(function (a) {
+        return '<li><a href="' + esc(a.u) + '"' + (touch ? '' : ' target="_blank"') + ' rel="noopener"><span class="ico" style="background:' + a.bg + '"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + a.i + '</svg></span><span>' + a.t + '<small>' + a.d + '</small></span></a></li>';
+      }).join('') + '</ul><button type="button" class="btn btn-line close" data-close>Cancelar</button></div>';
+    routeDialog.showModal();
+  }
+  document.querySelectorAll('[data-route]').forEach(function (link) {
+    link.addEventListener('click', function (e) {
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;
+      var ll = link.getAttribute('data-lat') + ',' + link.getAttribute('data-lon');
+      if (isAndroid) {
+        e.preventDefault();
+        window.location.href = 'geo:' + ll + '?q=' + ll + '(' + encodeURIComponent(link.getAttribute('data-name') || '') + ')';
+      } else if (typeof HTMLDialogElement === 'function') {
+        e.preventDefault();
+        openRoute(link);
+      }
+    });
+  });
+
   // Periodo de los gráficos (cada periodo ya viene dibujado).
   document.querySelectorAll('[data-periods]').forEach(function (box) {
     var btns = box.querySelectorAll('.chips button');
