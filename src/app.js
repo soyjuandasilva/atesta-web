@@ -134,8 +134,9 @@
     window.matchMedia('(min-width: 921px)').addEventListener('change', function (m) { if (m.matches) close(); });
   });
 
-  // «Como chegar»: en vez de saltar a Google Maps, se deja elegir la app de mapas.
-  // Sin JavaScript (o sin <dialog>) el enlace sigue abriendo Google Maps.
+  // «Como chegar»: en Android, un enlace geo: hace que el sistema muestre «Abrir con» con las apps
+  // instaladas (Maps, Waze, Uber…). En iPhone y en el ordenador no hay nada parecido, así que
+  // se ofrece una hoja propia. Sin JavaScript el enlace sigue abriendo Google Maps.
   var ua = navigator.userAgent;
   var isAndroid = /Android/i.test(ua);
   var isApple = /iPhone|iPad|iPod|Macintosh/i.test(ua);
@@ -151,8 +152,6 @@
     ];
     if (isApple) apps.push({ t: 'Apple Mapas', d: 'Rota nos Mapas da Apple', bg: '#34C759', u: 'https://maps.apple.com/?daddr=' + ll + '&dirflg=d',
       i: '<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>' });
-    if (isAndroid) apps.push({ t: 'Outra app', d: 'Escolher entre as apps instaladas', bg: '#4A5E53', u: 'geo:' + ll + '?q=' + ll + '(' + encodeURIComponent(name) + ')',
-      i: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>' });
     return apps;
   }
   function openRoute(link) {
@@ -168,19 +167,23 @@
     }
     routeDialog.innerHTML = '<div class="sheet"><div class="grab" aria-hidden="true"></div><h2 id="route-t">Como chegar</h2><p class="to">' + esc(name) + '</p><ul>' +
       routeApps(lat, lon, name).map(function (a) {
-        return '<li><a href="' + esc(a.u) + '"' + (touch || a.u.indexOf('geo:') === 0 ? '' : ' target="_blank"') + ' rel="noopener"><span class="ico" style="background:' + a.bg + '"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + a.i + '</svg></span><span>' + a.t + '<small>' + a.d + '</small></span></a></li>';
+        return '<li><a href="' + esc(a.u) + '"' + (touch ? '' : ' target="_blank"') + ' rel="noopener"><span class="ico" style="background:' + a.bg + '"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + a.i + '</svg></span><span>' + a.t + '<small>' + a.d + '</small></span></a></li>';
       }).join('') + '</ul><button type="button" class="btn btn-line close" data-close>Cancelar</button></div>';
     routeDialog.showModal();
   }
-  if (typeof HTMLDialogElement === 'function') {
-    document.querySelectorAll('[data-route]').forEach(function (link) {
-      link.addEventListener('click', function (e) {
-        if (e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;
+  document.querySelectorAll('[data-route]').forEach(function (link) {
+    link.addEventListener('click', function (e) {
+      if (e.ctrlKey || e.metaKey || e.shiftKey || e.button) return;
+      var ll = link.getAttribute('data-lat') + ',' + link.getAttribute('data-lon');
+      if (isAndroid) {
+        e.preventDefault();
+        window.location.href = 'geo:' + ll + '?q=' + ll + '(' + encodeURIComponent(link.getAttribute('data-name') || '') + ')';
+      } else if (typeof HTMLDialogElement === 'function') {
         e.preventDefault();
         openRoute(link);
-      });
+      }
     });
-  }
+  });
 
   // Periodo de los gráficos (cada periodo ya viene dibujado).
   document.querySelectorAll('[data-periods]').forEach(function (box) {
