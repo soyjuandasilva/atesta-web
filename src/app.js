@@ -1,4 +1,4 @@
-// Atesta web: lo poco que necesita JavaScript. Sin él, todo se lee igual.
+// Abastece Hoje web: lo poco que necesita JavaScript. Sin él, todo se lee igual.
 (function () {
   'use strict';
 
@@ -35,7 +35,7 @@
       return tpl.replace('{url}', s.u).replace('{tile}', tile)
         .replace('{name}', esc(s.n) + (i ? '' : '<span class="best">' + (state.origin && state.sort === 'dist' ? 'Mais perto' : 'Mais barato') + '</span>'))
         .replace('{addr}', esc(s.l)).replace('{km}', dist != null ? fmtKm(dist) : esc(s.m))
-        .replace('{seg}', window.atestaSeg(s.p[state.fuel], state.fuel));
+        .replace('{seg}', window.ahSeg(s.p[state.fuel], state.fuel));
     }
     function showStatic() {
       var found = false;

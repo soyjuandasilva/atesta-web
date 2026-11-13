@@ -1,4 +1,4 @@
-/* Atesta web. Mismos colores, letra y panel de precios que la app (ui/Theme.kt, ui/SegmentDisplay.kt). */
+/* Abastece Hoje web. Mismos colores, letra y panel de precios que la app (ui/Theme.kt, ui/SegmentDisplay.kt). */
 @font-face { font-family: "Barlow Semi Condensed"; font-weight: 600; font-display: swap; src: url(/assets/fonts/barlowsemicondensed-600.woff2) format("woff2") }
 @font-face { font-family: "Barlow Semi Condensed"; font-weight: 700; font-display: swap; src: url(/assets/fonts/barlowsemicondensed-700.woff2) format("woff2") }
 @font-face { font-family: "Barlow Semi Condensed"; font-weight: 800; font-display: swap; src: url(/assets/fonts/barlowsemicondensed-800.woff2) format("woff2") }
@@ -42,8 +42,8 @@ img, svg { max-width: 100% }
 /* Cabecera y pie */
 header.top { position: sticky; top: 0; z-index: 9; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid var(--line) }
 header.top .wrap { display: flex; align-items: center; gap: 20px; height: 60px }
-.brand { display: flex; align-items: center; gap: 9px; text-decoration: none; font: 800 22px/1 var(--f-display) }
-.mark { width: 32px; height: 32px; border-radius: 9px; background: #15803D; display: grid; place-items: center; flex: none }
+.brand { display: flex; align-items: center; flex: none; text-decoration: none; border-radius: 8px }
+.brand img { display: block; height: 44px; width: auto }
 nav.main { display: flex; gap: 2px; margin-left: 6px }
 nav.main a { text-decoration: none; padding: 8px 12px; border-radius: 999px; font-weight: 600; font-size: 15px; color: var(--ink-2); white-space: nowrap }
 nav.main a:hover { color: var(--ink); background: var(--surface-2) }

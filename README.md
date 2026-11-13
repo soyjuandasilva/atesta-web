@@ -1,6 +1,6 @@
-# Atesta web
+# Abastece Hoje web
 
-Web de Atesta: los precios de los combustibles en Portugal, con los datos oficiales de la
+Web de Abastece Hoje: los precios de los combustibles en Portugal, con los datos oficiales de la
 DGEG. Es una web estática: un script de Node genera todas las páginas y Cloudflare Pages
 las sirve. Sin dependencias.
 
@@ -35,7 +35,7 @@ datos cambiaron, hace push. Cloudflare Pages ve el push y vuelve a generar la we
 | `/postos/`, `/postos/<distrito>/`, `/postos/<distrito>/<concelho>/` | Postos por zona |
 | `/posto/<nombre>-<id>/` | Ficha de cada posto |
 | `/marcas/`, `/marcas/<marca>/` | Precio medio por marca |
-| `/app/` | La app Atesta |
+| `/app/` | La app Abastece Hoje |
 
 ## Diseño
 

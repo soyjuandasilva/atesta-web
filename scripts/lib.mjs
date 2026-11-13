@@ -1,4 +1,4 @@
-// Datos y utilidades comunes de la web de Atesta.
+// Datos y utilidades comunes de la web de Abastece Hoje.
 
 /** Combustibles de la DGEG, con los mismos ids y colores que la app. */
 export const FUELS = [

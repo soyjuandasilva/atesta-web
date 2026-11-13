@@ -4,7 +4,7 @@ const DROP = (x, y, s, fill) => `<g transform="translate(${x} ${y}) scale(${s})"
 const DISPLAY = 'font-family="Barlow Semi Condensed, Arial Narrow, sans-serif"';
 const BODY = 'font-family="Barlow, system-ui, sans-serif"';
 
-export function makeIllustrations({ segAt, n3, FUEL }) {
+export function makeIllustrations({ segAt, n3, FUEL, ICON_D }) {
   return {
     /** Totem del posto con los precios medios de hoy. rows: [[fuelId, precio], …] (3 filas). */
     totem: (rows) => `<svg class="ill" viewBox="0 0 240 300" role="img" aria-label="Totem de preços com as médias de hoje">
@@ -12,7 +12,7 @@ export function makeIllustrations({ segAt, n3, FUEL }) {
 <rect x="108" y="200" width="24" height="88" rx="4" fill="var(--ink-2)"/>
 <rect x="30" y="14" width="180" height="200" rx="16" fill="var(--surface)" stroke="var(--line)" stroke-width="2"/>
 <path d="M30 30 A16 16 0 0 1 46 14 H194 A16 16 0 0 1 210 30 V58 H30 Z" fill="#15803D"/>
-${DROP(92, 19, 0.42, '#fff')}<text x="122" y="44" fill="#fff" ${DISPLAY} font-weight="800" font-size="20">Atesta</text>
+<path transform="translate(48 21) scale(.3)" fill="#fff" d="${ICON_D}"/><text x="82" y="43" fill="#fff" ${DISPLAY} font-weight="800" font-size="19">Abastece Hoje</text>
 ${rows.map(([fid, v], i) => { const y = 72 + i * 46; return `<rect x="44" y="${y}" width="152" height="36" rx="6" fill="#050706"/><rect x="44" y="${y}" width="6" height="36" rx="2" fill="${FUEL[fid].color}"/><text x="58" y="${y + 22}" fill="#9FB0A6" ${BODY} font-weight="600" font-size="11">${FUEL[fid].short.replace('Gasolina ', 'Gas. ')}</text>${segAt(n3(v), 112, y + 7, 22)}`; }).join('')}
 </svg>`,
 
@@ -56,8 +56,8 @@ ${arrow}
 </svg>`;
     },
 
-    /** El móvil con la app Atesta. */
-    phone: (v1, v2) => `<svg class="ill" viewBox="0 0 220 400" role="img" aria-label="A app Atesta num telemóvel">
+    /** El móvil con la app Abastece Hoje. */
+    phone: (v1, v2) => `<svg class="ill" viewBox="0 0 220 400" role="img" aria-label="A app Abastece Hoje num telemóvel">
 <rect x="20" y="8" width="180" height="384" rx="32" fill="#0b0f0d"/>
 <rect x="30" y="18" width="160" height="364" rx="24" fill="var(--surface-2)"/>
 <g stroke="var(--surface)" stroke-linecap="round" fill="none"><path d="M30 150 L190 110" stroke-width="10"/><path d="M100 18 L120 260" stroke-width="8"/><path d="M30 220 L190 205" stroke-width="6"/></g>

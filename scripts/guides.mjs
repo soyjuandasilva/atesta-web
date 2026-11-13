@@ -25,7 +25,7 @@ export function makeGuides(ctx) {
     ['Os combustíveis vão subir ou descer na próxima semana?', `Para segunda-feira, ${dayMonth(nextMonday)}, o gasóleo ${vtxt('gasoleo')}, a gasolina ${vtxt('gasolina')} e o GPL ${vtxt('gpl')}, segundo as notícias desta semana. Vê a <a href="/proxima-semana/">previsão completa</a>.`],
     ['Onde está o combustível mais barato?', 'Em geral, nos postos de hipermercado e de marcas low-cost. Para saber qual é o mais barato perto de ti, usa o botão «Perto de mim» no topo desta página ou escolhe o teu distrito.'],
     ['Quem define o preço dos combustíveis em Portugal?', 'Desde 2004 os preços são livres: cada marca e cada posto fixa o seu. O Estado define os impostos (ISP, taxa de carbono e IVA) e a DGEG publica os preços que os postos são obrigados a comunicar.'],
-    ['Com que frequência são atualizados os preços?', 'O Atesta lê os dados da DGEG a cada duas horas. Os postos costumam mudar os preços à segunda-feira, mas podem mudá-los em qualquer dia.'],
+    ['Com que frequência são atualizados os preços?', 'O Abastece Hoje lê os dados da DGEG a cada duas horas. Os postos costumam mudar os preços à segunda-feira, mas podem mudá-los em qualquer dia.'],
   ];
 
   return {
@@ -42,7 +42,7 @@ export function makeGuides(ctx) {
 <p>Entre postos, a diferença é grande: no gasóleo, as marcas de hipermercado e low-cost estão hoje ${cnt(tr - lc)} abaixo das marcas tradicionais. Escolher o posto mais barato do teu concelho em vez de um com o preço médio poupa, em média, ${n2(sv.eur)} € num depósito de 50 litros.</p>
 <h2>Como funcionam os preços dos combustíveis</h2>
 <p>Desde 2004 os preços dos combustíveis em Portugal são livres: cada marca e cada posto decide o seu. O que é igual para todos são os impostos, o ISP, a taxa de carbono e o IVA de 23 %, que juntos pesam bastante em cada litro. O resto depende das cotações internacionais, do câmbio euro-dólar e das margens de quem vende.</p>
-<p>Os postos são obrigados a comunicar à DGEG cada mudança de preço. É desses dados oficiais que o Atesta tira os preços do <a href="/gasoleo/">gasóleo</a>, da <a href="/gasolina/">gasolina</a> e do <a href="/gpl/">GPL</a>, as médias por <a href="/postos/">distrito e concelho</a> e a comparação entre <a href="/marcas/">marcas</a>.</p>
+<p>Os postos são obrigados a comunicar à DGEG cada mudança de preço. É desses dados oficiais que o Abastece Hoje tira os preços do <a href="/gasoleo/">gasóleo</a>, da <a href="/gasolina/">gasolina</a> e do <a href="/gpl/">GPL</a>, as médias por <a href="/postos/">distrito e concelho</a> e a comparação entre <a href="/marcas/">marcas</a>.</p>
 <h2>Quando mudam os preços</h2>
 <p>Os postos mudam os preços sobretudo à segunda-feira, conforme o que aconteceu nos mercados na semana anterior. A partir de quinta-feira já se sabe se vão subir ou descer: é o que mostramos na <a href="/proxima-semana/">previsão da próxima semana</a>.</p>`) + faqBlock('home-faq', 'Perguntas sobre os preços dos combustíveis', homeFaq);
     },

@@ -1,8 +1,8 @@
 {
-  "name": "atesta-web",
+  "name": "abastece-hoje-web",
   "version": "1.0.0",
   "private": true,
-  "description": "Web de Atesta: preços dos combustíveis em Portugal, gerada a partir dos dados da DGEG.",
+  "description": "Web de Abastece Hoje: preços dos combustíveis em Portugal, gerada a partir dos dados da DGEG.",
   "type": "module",
   "engines": { "node": ">=20" },
   "scripts": {

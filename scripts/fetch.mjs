@@ -8,7 +8,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { FUELS, mean, todayLisbon } from './lib.mjs';
 
 const BASE = 'https://precoscombustiveis.dgeg.gov.pt/api/PrecoComb';
-const UA = 'Atesta-Web/1.0';
+const UA = 'AbasteceHoje-Web/1.0';
 const PAGE = 500;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
