@@ -1,5 +1,6 @@
-// Textos legales (português de Portugal). Describen lo que la web hace hoy: si cambia
-// (publicidad, analítica, formularios), hay que actualizarlos antes de publicar el cambio.
+// Textos legales (português de Portugal). Describen lo que la web hace hoy (incluido Google
+// Analytics con consentimiento): si cambia (publicidad, formularios, otra analítica), hay que
+// actualizarlos antes de publicar el cambio.
 
 export const OWNER = {
   name: 'Juan Manuel da Silva Pérez',
@@ -8,7 +9,7 @@ export const OWNER = {
   email: 'soyjuandasilva@gmail.com',
 };
 
-export const LEGAL_UPDATED = '12 de novembro de 2026';
+export const LEGAL_UPDATED = '20 de novembro de 2026';
 
 const contact = `<p><b>${OWNER.name}</b><br>NIF ${OWNER.nif} · ${OWNER.country}<br>Email: <a href="mailto:${OWNER.email}">${OWNER.email}</a></p>`;
 
@@ -19,23 +20,25 @@ export const LEGAL = [
     title: 'Política de privacidade | Abastece Hoje',
     h1: 'Política de privacidade',
     sub: 'Que dados pessoais trata o Abastece Hoje, para quê e como podes exercer os teus direitos.',
-    description: 'Política de privacidade do Abastece Hoje: o site não pede registo, não usa cookies nem ferramentas de análise e não guarda a tua localização.',
+    description: 'Política de privacidade do Abastece Hoje: o site não pede registo, só mede as visitas com o Google Analytics se aceitares e não guarda a tua localização.',
     body: `
 <h2>Quem é o responsável</h2>
 <p>O responsável pelo tratamento dos dados pessoais no site Abastece Hoje é:</p>
 ${contact}
 
 <h2>O resumo</h2>
-<p>O Abastece Hoje não pede registo, não tem formulários e não usa cookies nem ferramentas de análise de visitas. Não sabemos quem és e não criamos perfis.</p>
+<p>O Abastece Hoje não pede registo nem tem formulários. Só mede as visitas com o Google Analytics se aceitares as cookies de análise no aviso que aparece na primeira visita. Não sabemos quem és e não criamos perfis.</p>
 
 <h2>Que dados tratamos</h2>
 <p><b>Dados técnicos de acesso.</b> Quando abres uma página, o teu browser envia ao servidor o endereço IP e dados técnicos, como o tipo de browser, a página pedida e a hora. O serviço de alojamento usa-os para te mostrar a página e para proteger o site contra ataques e abusos. O fundamento é o interesse legítimo em manter o site a funcionar com segurança (artigo 6.º, n.º 1, alínea f, do RGPD). Não usamos estes dados para te identificar.</p>
 <p><b>Zona aproximada.</b> Na página inicial mostramos primeiro os postos da tua zona. Para isso, a rede do alojamento (Cloudflare) deduz a cidade aproximada a partir do endereço IP da ligação, sem te pedir nada. Essa zona serve só para escolher os postos que vês: não é guardada nem associada a ti. O fundamento é o interesse legítimo em mostrar-te informação útil logo à entrada. Se preferires, escolhe outro distrito na lista.</p>
 <p><b>Localização exata.</b> O botão «Perto de mim» pede a localização ao teu browser, e só quando carregas nele. O browser pergunta-te primeiro se a queres partilhar. A distância aos postos é calculada no teu próprio dispositivo: a localização exata não é enviada ao Abastece Hoje nem guardada.</p>
+<p><b>Estatísticas de visitas.</b> Se aceitares as cookies de análise, o Google Analytics regista as páginas que vês, de onde vens (por exemplo, uma pesquisa no Google), o tipo de dispositivo e de browser, a zona aproximada e um identificador aleatório guardado numa cookie. Usamos estes dados só em conjunto, para saber quantas pessoas usam o site e que páginas são úteis. O Google Analytics não guarda o endereço IP. Desligámos os sinais da Google e a personalização de anúncios. O fundamento é o teu consentimento (artigo 6.º, n.º 1, alínea a, do RGPD), que podes retirar a qualquer momento em «Preferências de cookies», no fundo de cada página. Se recusares, o site funciona igual e não é carregado nada da Google.</p>
 <p><b>Emails.</b> Se nos escreveres, usamos o teu endereço e a tua mensagem apenas para responder. Apagamos a conversa quando já não for precisa.</p>
 
 <h2>Quem mais trata os dados</h2>
 <p>O site está alojado na Cloudflare, Inc., que atua como subcontratante e serve as páginas a partir da sua rede. Pode haver transferências de dados técnicos para os Estados Unidos, feitas ao abrigo do Quadro de Privacidade de Dados UE-EUA e das cláusulas contratuais-tipo aprovadas pela Comissão Europeia. Os dados técnicos ficam guardados apenas pelo tempo necessário, segundo as regras da Cloudflare.</p>
+<p>Se aceitares as cookies de análise, a Google Ireland Limited trata os dados das visitas como subcontratante, através do Google Analytics. Pode haver transferências para os Estados Unidos, feitas ao abrigo do Quadro de Privacidade de Dados UE-EUA e das cláusulas contratuais-tipo. Os dados de cada visitante ficam guardados no Google Analytics durante 2 meses; depois disso, ficam só os totais.</p>
 <p>As letras do site são servidas pelo próprio Abastece Hoje, sem ligações ao Google Fonts.</p>
 
 <h2>Ligações para outros sites</h2>
@@ -46,7 +49,7 @@ ${contact}
 <p>Se achares que os teus dados não foram bem tratados, podes apresentar reclamação à Comissão Nacional de Proteção de Dados (CNPD), em <a href="https://www.cnpd.pt" rel="noopener" target="_blank">www.cnpd.pt</a>.</p>
 
 <h2>Alterações</h2>
-<p>Se o Abastece Hoje passar a mostrar publicidade ou a medir as visitas, esta política é atualizada antes e vais ver um aviso a pedir o teu consentimento para as cookies que não sejam necessárias.</p>
+<p>Se o Abastece Hoje passar a mostrar publicidade, esta política é atualizada antes e vais ver um aviso a pedir o teu consentimento para essas cookies.</p>
 <p class="muted">Última atualização: ${LEGAL_UPDATED}.</p>`,
   },
   {
@@ -54,18 +57,29 @@ ${contact}
     nav: 'Cookies',
     title: 'Política de cookies | Abastece Hoje',
     h1: 'Política de cookies',
-    sub: 'O Abastece Hoje não usa cookies de análise nem de publicidade.',
-    description: 'Política de cookies do Abastece Hoje: o site não usa cookies de análise nem de publicidade.',
+    sub: 'Que cookies usa o Abastece Hoje e como aceitas ou recusas as de análise.',
+    description: 'Política de cookies do Abastece Hoje: cookies de análise do Google Analytics só com o teu consentimento e nenhuma cookie de publicidade.',
     body: `
 <h2>O que são cookies</h2>
 <p>As cookies são pequenos ficheiros que um site guarda no teu browser para se lembrar de alguma coisa entre visitas, por exemplo uma sessão iniciada ou as tuas preferências.</p>
 
 <h2>As cookies do Abastece Hoje</h2>
-<p>O Abastece Hoje não cria cookies e não usa ferramentas de análise de visitas, redes sociais nem publicidade. Também não guarda nada no armazenamento local do teu browser para te seguir.</p>
-<p>O serviço de alojamento, a Cloudflare, pode colocar pontualmente cookies técnicas de segurança, usadas para distinguir pessoas de robôs e travar ataques. São estritamente necessárias para o site funcionar com segurança e, por isso, a lei não exige o teu consentimento.</p>
+<p>O Abastece Hoje só usa cookies de análise se aceitares, no aviso que aparece na primeira visita. Não usa cookies de publicidade nem de redes sociais.</p>
 
-<h2>Como apagar as cookies</h2>
-<p>Podes ver e apagar as cookies nas definições do teu browser, em «Privacidade» ou «Dados de navegação». Apagá-las não afeta o funcionamento do Abastece Hoje.</p>
+<h3>Cookies de análise (só com o teu consentimento)</h3>
+<p>São do Google Analytics e servem para contar as visitas e perceber que páginas são úteis. Até carregares em «Aceitar», o site não carrega nada da Google.</p>
+<ul>
+<li><b>_ga</b>: distingue visitantes com um identificador aleatório. Dura 2 anos.</li>
+<li><b>_ga_</b> seguido de um código: guarda o estado da visita. Dura 2 anos.</li>
+</ul>
+
+<h3>Cookies e dados técnicos (necessários)</h3>
+<p>O serviço de alojamento, a Cloudflare, pode colocar pontualmente cookies técnicas de segurança, usadas para distinguir pessoas de robôs e travar ataques. São estritamente necessárias para o site funcionar com segurança e, por isso, a lei não exige o teu consentimento.</p>
+<p>A tua escolha no aviso (aceitar ou recusar) fica guardada no armazenamento local do teu browser, com o nome <b>ah-consent</b>, para não voltarmos a perguntar. Não serve para te seguir.</p>
+
+<h2>Como mudar a tua escolha</h2>
+<p>Carrega em «Preferências de cookies», no fundo de qualquer página, para aceitar ou recusar outra vez. Se recusares depois de teres aceitado, o site apaga as cookies do Google Analytics.</p>
+<p>Também podes ver e apagar as cookies nas definições do teu browser, em «Privacidade» ou «Dados de navegação». Apagá-las não afeta o funcionamento do Abastece Hoje.</p>
 
 <h2>Alterações</h2>
 <p>Se o Abastece Hoje passar a mostrar publicidade, como o Google AdSense, vais ver primeiro um aviso para aceitar ou recusar essas cookies, e esta página passa a listá-las uma a uma.</p>

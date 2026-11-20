@@ -24,6 +24,9 @@ datos cambiaron, hace push. Cloudflare Pages ve el push y vuelve a generar la we
 - Variables: `NODE_VERSION=20`, `SITE_URL` (la dirección pública) y `SITE_INDEX=1`
   solo cuando la web esté en su dominio definitivo. Sin `SITE_INDEX=1`, todas las
   páginas llevan `noindex` y `robots.txt` bloquea a los buscadores.
+- Con `SITE_INDEX=1` se activa Google Analytics (`G-Y7DF16S9PX`, o `GA_ID` si se define).
+  Solo carga si el visitante pulsa «Aceitar» en el aviso de cookies; las páginas de
+  privacidad y cookies (`scripts/legal.mjs`) lo describen.
 
 ## Páginas
 

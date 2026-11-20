@@ -1,6 +1,8 @@
 // Genera la web estática en dist/ a partir de data/.
 //   SITE_URL    dirección pública (por defecto https://atesta.pages.dev)
 //   SITE_INDEX  «1» para dejar que Google indexe; si no, todas las páginas llevan noindex.
+//   GA_ID       ID de medición de Google Analytics (por defecto el de abastecehoje.pt).
+//               Solo se usa con SITE_INDEX=1, y solo carga si el visitante acepta las cookies.
 
 import { readFile, writeFile, mkdir, rm, cp } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
@@ -12,6 +14,7 @@ import { makeGuides } from './guides.mjs';
 
 const SITE = (process.env.SITE_URL || 'https://atesta.pages.dev').replace(/\/$/, '');
 const INDEX = process.env.SITE_INDEX === '1';
+const GA_ID = INDEX ? (process.env.GA_ID || 'G-Y7DF16S9PX') : '';
 const OUT = 'dist';
 
 const stations = JSON.parse(await readFile('data/stations.json', 'utf8'));
@@ -271,6 +274,8 @@ function menuHtml(nav, path) {
 }
 
 // ---------- Plantilla ----------
+// Aviso de cookies: oculto por defecto; app.js lo muestra si el visitante aún no ha elegido.
+const CONSENT_HTML = `<div class="consent" data-consent hidden role="region" aria-label="Cookies"><div class="wrap"><p>Usamos cookies do Google Analytics para contar as visitas e perceber que páginas são úteis. Só as ativamos se aceitares. <a href="/cookies/">Saber mais</a></p><div class="consent-btns"><button type="button" class="btn btn-line" data-consent-choice="denied">Recusar</button><button type="button" class="btn btn-line" data-consent-choice="granted">Aceitar</button></div></div></div>\n`;
 const pages = [];
 let CSS_V = '', JS_V = '';
 function layout({ path, title, description, h1Section, body, nav, ld = [], type = 'website' }) {
@@ -294,7 +299,7 @@ ${INDEX ? '' : '<meta name="robots" content="noindex, nofollow">\n'}<link rel="c
 <link rel="stylesheet" href="/assets/site.css?v=${CSS_V}">
 ${lds}
 </head>
-<body>
+<body${GA_ID ? ` data-ga="${GA_ID}"` : ''}>
 ${SPRITE}
 <a class="skip" href="#conteudo">Saltar para o conteúdo</a>
 <header class="top"><div class="wrap"><a class="brand" href="/" aria-label="Abastece Hoje, página inicial">${LOGO}</a><nav class="main" aria-label="Secções">${navHtml}</nav><a class="btn btn-brand" href="/app/">Ver a app</a>
@@ -309,8 +314,8 @@ ${body}
 <div><h2>Postos por distrito</h2><ul>${districts.slice(0, 9).map((d) => `<li><a href="${d.url}">${esc(d.name)}</a></li>`).join('')}</ul></div>
 <div><h2>&nbsp;</h2><ul>${districts.slice(9).map((d) => `<li><a href="${d.url}">${esc(d.name)}</a></li>`).join('')}</ul></div>
 <div><h2>Marcas</h2><ul>${brandPages.slice(0, 8).map((b) => `<li><a href="${b.url}">${esc(b.name)}</a></li>`).join('')}<li><a href="/marcas/">Todas as marcas</a></li></ul></div>
-</div><div class="legal"><span>Preços da DGEG (Direção-Geral de Energia e Geologia), comunicados pelos postos. Últimos dados: ${esc(updatedText(lastUpdate))}.</span><span><a href="/app/">App Abastece Hoje para Android</a> · <a href="/privacidade/">Privacidade</a> · <a href="/cookies/">Cookies</a> · <a href="/termos/">Termos de utilização</a> · © ${todayD.getUTCFullYear()} Abastece Hoje</span></div></div></footer>
-<script>${SEG_CLIENT}</script>
+</div><div class="legal"><span>Preços da DGEG (Direção-Geral de Energia e Geologia), comunicados pelos postos. Últimos dados: ${esc(updatedText(lastUpdate))}.</span><span><a href="/app/">App Abastece Hoje para Android</a> · <a href="/privacidade/">Privacidade</a> · <a href="/cookies/">Cookies</a> · <a href="/termos/">Termos de utilização</a>${GA_ID ? ' · <button type="button" class="linkish" data-consent-open>Preferências de cookies</button>' : ''} · © ${todayD.getUTCFullYear()} Abastece Hoje</span></div></div></footer>
+${GA_ID ? CONSENT_HTML : ''}<script>${SEG_CLIENT}</script>
 <script src="/assets/app.js?v=${JS_V}" defer></script>
 </body>
 </html>

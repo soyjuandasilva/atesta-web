@@ -196,4 +196,54 @@
       });
     });
   });
+
+  // Cookies de Google Analytics: sin «Aceitar» no se descarga nada de Google.
+  // La elección se guarda en localStorage («ah-consent») para no volver a preguntar.
+  var GA = document.body.getAttribute('data-ga');
+  var banner = document.querySelector('[data-consent]');
+  if (GA && banner) {
+    var KEY = 'ah-consent';
+    var gaLoaded = false;
+    var readChoice = function () { try { return localStorage.getItem(KEY); } catch (e) { return null; } };
+    var saveChoice = function (v) { try { localStorage.setItem(KEY, v); } catch (e) {} };
+    var loadGA = function () {
+      if (gaLoaded) return;
+      gaLoaded = true;
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { window.dataLayer.push(arguments); };
+      window.gtag('consent', 'default', { ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'granted' });
+      window.gtag('js', new Date());
+      window.gtag('config', GA, { allow_google_signals: false, allow_ad_personalization_signals: false });
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(GA);
+      document.head.appendChild(s);
+    };
+    var clearGA = function () {
+      var host = location.hostname;
+      document.cookie.split(';').forEach(function (c) {
+        var name = c.split('=')[0].trim();
+        if (!/^_ga/.test(name)) return;
+        [host, '.' + host, ''].forEach(function (d) {
+          document.cookie = name + '=; Max-Age=0; path=/' + (d ? '; domain=' + d : '');
+        });
+      });
+    };
+    var choose = function (v) {
+      saveChoice(v);
+      banner.hidden = true;
+      if (v === 'granted') { loadGA(); return; }
+      if (gaLoaded) window.gtag('consent', 'update', { analytics_storage: 'denied' });
+      clearGA();
+    };
+    banner.querySelectorAll('[data-consent-choice]').forEach(function (b) {
+      b.addEventListener('click', function () { choose(b.getAttribute('data-consent-choice')); });
+    });
+    document.querySelectorAll('[data-consent-open]').forEach(function (b) {
+      b.addEventListener('click', function () { banner.hidden = false; banner.querySelector('button').focus(); });
+    });
+    var choice = readChoice();
+    if (choice === 'granted') loadGA();
+    else if (choice !== 'denied') banner.hidden = false;
+  }
 })();
