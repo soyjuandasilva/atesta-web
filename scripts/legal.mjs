@@ -75,7 +75,7 @@ ${contact}
 
 <h3>Cookies e dados técnicos (necessários)</h3>
 <p>O serviço de alojamento, a Cloudflare, pode colocar pontualmente cookies técnicas de segurança, usadas para distinguir pessoas de robôs e travar ataques. São estritamente necessárias para o site funcionar com segurança e, por isso, a lei não exige o teu consentimento.</p>
-<p>A tua escolha no aviso (aceitar ou recusar) fica guardada no armazenamento local do teu browser, com o nome <b>ah-consent</b>, para não voltarmos a perguntar. Não serve para te seguir.</p>
+<p>A tua escolha no aviso (aceitar ou recusar) fica guardada no armazenamento local do teu browser, com o nome <b>ah-consent</b>, juntamente com a data em que escolheste. Voltamos a perguntar passados 13 meses, se aceitaste, ou 6 meses, se recusaste. Não serve para te seguir.</p>
 
 <h2>Como mudar a tua escolha</h2>
 <p>Carrega em «Preferências de cookies», no fundo de qualquer página, para aceitar ou recusar outra vez. Se recusares depois de teres aceitado, o site apaga as cookies do Google Analytics.</p>

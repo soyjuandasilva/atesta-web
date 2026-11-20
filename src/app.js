@@ -198,14 +198,23 @@
   });
 
   // Cookies de Google Analytics: sin «Aceitar» no se descarga nada de Google.
-  // La elección se guarda en localStorage («ah-consent») para no volver a preguntar.
+  // La elección se guarda en localStorage («ah-consent» = «granted|fecha» o «denied|fecha») y
+  // caduca: se vuelve a preguntar a los 13 meses si aceptó y a los 6 meses si rechazó.
   var GA = document.body.getAttribute('data-ga');
   var banner = document.querySelector('[data-consent]');
   if (GA && banner) {
     var KEY = 'ah-consent';
+    var DAY = 864e5;
+    var MAX_AGE = { granted: 395 * DAY, denied: 182 * DAY };
     var gaLoaded = false;
-    var readChoice = function () { try { return localStorage.getItem(KEY); } catch (e) { return null; } };
-    var saveChoice = function (v) { try { localStorage.setItem(KEY, v); } catch (e) {} };
+    var readChoice = function () {
+      var raw = null;
+      try { raw = localStorage.getItem(KEY); } catch (e) {}
+      var m = /^(granted|denied)\|(\d+)$/.exec(raw || '');
+      if (!m || Date.now() - +m[2] > MAX_AGE[m[1]]) return null;
+      return m[1];
+    };
+    var saveChoice = function (v) { try { localStorage.setItem(KEY, v + '|' + Date.now()); } catch (e) {} };
     var loadGA = function () {
       if (gaLoaded) return;
       gaLoaded = true;
