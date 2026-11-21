@@ -3,18 +3,26 @@
 //   SITE_INDEX  «1» para dejar que Google indexe; si no, todas las páginas llevan noindex.
 //   GA_ID       ID de medición de Google Analytics (por defecto el de abastecehoje.pt).
 //               Solo se usa con SITE_INDEX=1, y solo carga si el visitante acepta las cookies.
+//   ADSENSE_CLIENT  ID de editor de AdSense («ca-pub-…»). Solo con SITE_INDEX=1. Si está, carga
+//               el código de AdSense en todas las páginas, cambia nuestro aviso de cookies por el
+//               aviso de consentimiento de Google (CMP certificada, TCF) y usa los textos
+//               legales con publicidad. El aviso se configura en AdSense › Privacidade e mensagens.
 
 import { readFile, writeFile, mkdir, rm, cp } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { FUELS, FUEL, slug, mean, todayLisbon, mondayVerdict } from './lib.mjs';
 import { makeIllustrations } from './illustrations.mjs';
-import { LEGAL } from './legal.mjs';
+import { legalPages, aboutPage } from './legal.mjs';
 import { makeSummaries } from './summaries.mjs';
 import { makeGuides } from './guides.mjs';
 
 const SITE = (process.env.SITE_URL || 'https://atesta.pages.dev').replace(/\/$/, '');
 const INDEX = process.env.SITE_INDEX === '1';
 const GA_ID = INDEX ? (process.env.GA_ID || 'G-Y7DF16S9PX') : '';
+const ADS = INDEX ? (process.env.ADSENSE_CLIENT || '').trim() : '';
+if (ADS && !/^ca-pub-\d{10,20}$/.test(ADS)) throw new Error(`ADSENSE_CLIENT no válido: «${ADS}» (debe ser ca-pub-seguido de números)`);
+const LEGAL = legalPages({ ads: !!ADS });
+const ABOUT = aboutPage({ ads: !!ADS });
 const OUT = 'dist';
 
 const stations = JSON.parse(await readFile('data/stations.json', 'utf8'));
@@ -276,6 +284,14 @@ function menuHtml(nav, path) {
 // ---------- Plantilla ----------
 // Aviso de cookies: oculto por defecto; app.js lo muestra si el visitante aún no ha elegido.
 const CONSENT_HTML = `<div class="consent" data-consent hidden role="region" aria-label="Cookies"><div class="wrap"><p>Usamos cookies do Google Analytics para contar as visitas e perceber que páginas são úteis. Só as ativamos se aceitares. <a href="/cookies/">Saber mais</a></p><div class="consent-btns"><button type="button" class="btn btn-line" data-consent-choice="denied">Recusar</button><button type="button" class="btn btn-line" data-consent-choice="granted">Aceitar</button></div></div></div>\n`;
+// Con AdSense: Consent Mode v2 denegado por defecto en el EEE, Reino Unido y Suiza (el aviso de
+// Google lo actualiza con la elección del visitante), Google Analytics y el código de AdSense, que
+// trae el aviso de consentimiento configurado en la cuenta.
+const EEA = ['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE','IS','LI','NO','GB','CH'];
+const ADS_HEAD = ADS ? `<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500,region:${JSON.stringify(EEA)}});gtag('consent','default',{ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted',analytics_storage:'granted'});gtag('js',new Date());${GA_ID ? `gtag('config','${GA_ID}',{allow_google_signals:false});` : ''}</script>
+${GA_ID ? `<script async src="https://www.googletagmanager.com/gtag/js?id=${GA_ID}"></script>
+` : ''}<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADS}" crossorigin="anonymous"></script>
+` : '';
 const pages = [];
 let CSS_V = '', JS_V = '';
 function layout({ path, title, description, h1Section, body, nav, ld = [], type = 'website' }) {
@@ -297,9 +313,9 @@ ${INDEX ? '' : '<meta name="robots" content="noindex, nofollow">\n'}<link rel="c
 <link rel="preload" href="/assets/fonts/barlowsemicondensed-800.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=${CSS_V}">
-${lds}
+${ADS ? ADS_HEAD : ''}${lds}
 </head>
-<body${GA_ID ? ` data-ga="${GA_ID}"` : ''}>
+<body${ADS ? ' data-ads' : GA_ID ? ` data-ga="${GA_ID}"` : ''}>
 ${SPRITE}
 <a class="skip" href="#conteudo">Saltar para o conteúdo</a>
 <header class="top"><div class="wrap"><a class="brand" href="/" aria-label="Abastece Hoje, página inicial">${LOGO}</a><nav class="main" aria-label="Secções">${navHtml}</nav><a class="btn btn-brand" href="/app/">Ver a app</a>
@@ -314,8 +330,8 @@ ${body}
 <div><h2>Postos por distrito</h2><ul>${districts.slice(0, 9).map((d) => `<li><a href="${d.url}">${esc(d.name)}</a></li>`).join('')}</ul></div>
 <div><h2>&nbsp;</h2><ul>${districts.slice(9).map((d) => `<li><a href="${d.url}">${esc(d.name)}</a></li>`).join('')}</ul></div>
 <div><h2>Marcas</h2><ul>${brandPages.slice(0, 8).map((b) => `<li><a href="${b.url}">${esc(b.name)}</a></li>`).join('')}<li><a href="/marcas/">Todas as marcas</a></li></ul></div>
-</div><div class="legal"><span>Preços da DGEG (Direção-Geral de Energia e Geologia), comunicados pelos postos. Últimos dados: ${esc(updatedText(lastUpdate))}.</span><span><a href="/app/">App Abastece Hoje para Android</a> · <a href="/privacidade/">Privacidade</a> · <a href="/cookies/">Cookies</a> · <a href="/termos/">Termos de utilização</a>${GA_ID ? ' · <button type="button" class="linkish" data-consent-open>Preferências de cookies</button>' : ''} · © ${todayD.getUTCFullYear()} Abastece Hoje</span></div></div></footer>
-${GA_ID ? CONSENT_HTML : ''}<script>${SEG_CLIENT}</script>
+</div><div class="legal"><span>Preços da DGEG (Direção-Geral de Energia e Geologia), comunicados pelos postos. Últimos dados: ${esc(updatedText(lastUpdate))}.</span><span><a href="/app/">App Abastece Hoje para Android</a> · <a href="/privacidade/">Privacidade</a> · <a href="/cookies/">Cookies</a> · <a href="/termos/">Termos de utilização</a> · <a href="/sobre/">Sobre e contacto</a>${GA_ID ? ' · <button type="button" class="linkish" data-consent-open>Preferências de cookies</button>' : ''} · © ${todayD.getUTCFullYear()} Abastece Hoje</span></div></div></footer>
+${GA_ID && !ADS ? CONSENT_HTML : ''}<script>${SEG_CLIENT}</script>
 <script src="/assets/app.js?v=${JS_V}" defer></script>
 </body>
 </html>
@@ -671,6 +687,17 @@ for (const L of LEGAL) {
   }));
 }
 
+// ---- Sobre e contacto ----
+{
+  const c = crumbs([['/', 'Abastece Hoje'], [ABOUT.path, ABOUT.nav]]);
+  await out(ABOUT.path, layout({
+    path: ABOUT.path, nav: '', title: ABOUT.title, description: ABOUT.description,
+    h1Section: `<section class="hero"><div class="wrap">${c.html}${heroTop(`<h1>${ABOUT.h1}</h1><p class="sub">${ABOUT.sub}</p>`, ILL.totem([[3201, NAT[3201]], [2101, NAT[2101]], [1120, NAT[1120]]]))}</div></section>`,
+    body: `<section class="block"><div class="wrap prose">${ABOUT.body}</div></section>`,
+    ld: [c.ld, { '@context': 'https://schema.org', '@type': 'AboutPage', name: ABOUT.title, url: SITE + ABOUT.path, mainEntity: { '@type': 'Organization', name: 'Abastece Hoje', url: SITE + '/', logo: SITE + '/assets/brand/icon-512.png' } }],
+  }));
+}
+
 // ---- 404, datos para «perto de mim», sitemap, robots, cabeceras ----
 {
   const html = layout({ path: '/404', nav: '', title: 'Página não encontrada | Abastece Hoje', description: 'Esta página não existe.',
@@ -684,4 +711,4 @@ await writeFile(OUT + '/sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<
 await writeFile(OUT + '/robots.txt', INDEX ? `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n` : 'User-agent: *\nDisallow: /\n');
 await writeFile(OUT + '/_headers', `/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n/dados/*\n  Cache-Control: public, max-age=900\n/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n${INDEX ? '' : '  X-Robots-Tag: noindex\n'}`);
 
-console.log(`${pages.length} páginas em ${OUT}/ · ${INDEX ? 'indexáveis' : 'noindex'} · ${SITE}`);
+console.log(`${pages.length} páginas em ${OUT}/ · ${INDEX ? 'indexáveis' : 'noindex'} · ${ADS ? 'AdSense ' + ADS : 'sem anúncios'} · ${SITE}`);

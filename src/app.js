@@ -255,4 +255,16 @@
     if (choice === 'granted') loadGA();
     else if (choice !== 'denied') banner.hidden = false;
   }
+
+  // Con AdSense, el aviso de consentimiento es el de Google: «Preferências de cookies» lo vuelve a abrir.
+  if (document.body.hasAttribute('data-ads')) {
+    try { localStorage.removeItem('ah-consent'); } catch (e) {}
+    document.querySelectorAll('[data-consent-open]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        window.googlefc = window.googlefc || {};
+        window.googlefc.callbackQueue = window.googlefc.callbackQueue || [];
+        window.googlefc.callbackQueue.push(function () { window.googlefc.showRevocationMessage(); });
+      });
+    });
+  }
 })();

@@ -27,6 +27,10 @@ datos cambiaron, hace push. Cloudflare Pages ve el push y vuelve a generar la we
 - Con `SITE_INDEX=1` se activa Google Analytics (`G-Y7DF16S9PX`, o `GA_ID` si se define).
   Solo carga si el visitante pulsa «Aceitar» en el aviso de cookies; las páginas de
   privacidad y cookies (`scripts/legal.mjs`) lo describen.
+- Con `ADSENSE_CLIENT=ca-pub-…` (y `SITE_INDEX=1`) se carga AdSense en todas las páginas, nuestro
+  aviso de cookies se cambia por el aviso de consentimiento de Google (Consent Mode v2, TCF) y
+  se publican los textos legales con publicidad. Antes hay que crear y publicar el mensaje RGPD
+  en AdSense › Privacidade e mensagens.
 
 ## Páginas
 
@@ -39,6 +43,7 @@ datos cambiaron, hace push. Cloudflare Pages ve el push y vuelve a generar la we
 | `/posto/<nombre>-<id>/` | Ficha de cada posto |
 | `/marcas/`, `/marcas/<marca>/` | Precio medio por marca |
 | `/app/` | La app Abastece Hoje |
+| `/sobre/` | Quién hace la web, de dónde salen los datos y contacto |
 
 ## Diseño
 
