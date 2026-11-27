@@ -11,6 +11,8 @@ las sirve. Sin dependencias.
    - `stations.json`: todos los postos con sus precios (una línea por posto).
    - `history.json`: la media de cada día por combustible y distrito.
    - `news.json`: titulares sobre los precios de la próxima semana.
+   - `known.json`: todas las URLs de posto publicadas alguna vez. Las que ya no existen
+     (posto cerrado o renombrado) se redirigen con 301 en `dist/_redirects`.
 2. `node scripts/build.mjs` genera la web en `dist/`.
 3. `node scripts/serve.mjs` la sirve en http://localhost:4321/ para verla.
 

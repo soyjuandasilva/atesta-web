@@ -5,7 +5,7 @@
 // Si la DGEG falla, no toca nada y termina con error (la web sigue con los datos de antes).
 
 import { readFile, writeFile } from 'node:fs/promises';
-import { FUELS, mean, todayLisbon } from './lib.mjs';
+import { FUELS, mean, slug, todayLisbon } from './lib.mjs';
 
 const BASE = 'https://precoscombustiveis.dgeg.gov.pt/api/PrecoComb';
 const UA = 'AbasteceHoje-Web/1.0';
@@ -78,6 +78,13 @@ async function news() {
 const list = await stations();
 if (list.length < 1000) throw new Error(`Só ${list.length} postos: a DGEG pode ter falhado. Não guardo nada.`);
 await writeFile('data/stations.json', '[\n' + list.map((s) => JSON.stringify(s)).join(',\n') + '\n]\n');
+
+// Todas las URLs de posto que la web ha publicado alguna vez: «/posto/…/» → [id, distrito, concelho].
+// build.mjs las usa para redirigir (301) las que ya no existen, en vez de dar 404 a Google.
+let known = {};
+try { known = JSON.parse(await readFile('data/known.json', 'utf8')); } catch {}
+for (const s of list) known[`/posto/${slug(s.n)}-${s.id}/`] = [s.id, s.d, s.m];
+await writeFile('data/known.json', '{\n' + Object.keys(known).sort().map((k) => `${JSON.stringify(k)}:${JSON.stringify(known[k])}`).join(',\n') + '\n}\n');
 
 // Histórico: la media de hoy (se reescribe durante el día; queda la última).
 let history = {};

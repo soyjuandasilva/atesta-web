@@ -709,6 +709,23 @@ await mkdir(OUT + '/dados', { recursive: true });
 await writeFile(OUT + '/dados/postos.json', JSON.stringify(stations.map((s) => ({ n: s.n, t: tileText(s.B), g: s.g || undefined, l: `${s.B} · ${s.l || s.m}`, m: s.m, d: s.ds, u: s.url, lat: s.lat, lon: s.lon, p: s.p }))));
 await writeFile(OUT + '/sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${pages.map((p) => `<url><loc>${SITE}${p}</loc><lastmod>${today}</lastmod></url>`).join('\n')}\n</urlset>\n`);
 await writeFile(OUT + '/robots.txt', INDEX ? `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n` : 'User-agent: *\nDisallow: /\n');
-await writeFile(OUT + '/_headers', `/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n/dados/*\n  Cache-Control: public, max-age=900\n/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n${INDEX ? '' : '  X-Robots-Tag: noindex\n'}`);
+// Postos que ya no salen en la DGEG (o que cambiaron de nombre): 301 a su ficha nueva, a su
+// concelho o a su distrito, para que Google no vea 404. Cloudflare Pages admite 2000 reglas.
+{
+  let known = {};
+  try { known = JSON.parse(await readFile('data/known.json', 'utf8')); } catch {}
+  const live = new Set(pages.map((p) => (p.endsWith('/') ? p : p + '/')));
+  const rules = [];
+  for (const [from, [id, d, m]] of Object.entries(known)) {
+    if (live.has(from)) continue;
+    const council = `/postos/${slug(d)}/${slug(m)}/`, district = `/postos/${slug(d)}/`;
+    const to = byId.get(id)?.url || (live.has(council) ? council : live.has(district) ? district : '/postos/');
+    rules.push(`${from} ${to} 301`);
+  }
+  if (rules.length > 2000) console.warn(`Aviso: ${rules.length} redirecciones; Cloudflare solo aplica 2000.`);
+  await writeFile(OUT + '/_redirects', rules.slice(-2000).join('\n') + '\n');
+  console.log(`Redirecciones 301: ${rules.length}`);
+}
+await writeFile(OUT + '/_headers',`/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n/dados/*\n  Cache-Control: public, max-age=900\n/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n${INDEX ? '' : '  X-Robots-Tag: noindex\n'}`);
 
 console.log(`${pages.length} páginas em ${OUT}/ · ${INDEX ? 'indexáveis' : 'noindex'} · ${ADS ? 'AdSense ' + ADS : 'sem anúncios'} · ${SITE}`);
